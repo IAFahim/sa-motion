@@ -6,7 +6,9 @@ namespace SA.Balance
         {
             get
             {
-                return BalanceParams.Standard;
+                var p = BalanceParams.Standard;
+                p.FallSpeed = 3.7087204f;
+                return p;
             }
         }
     }
