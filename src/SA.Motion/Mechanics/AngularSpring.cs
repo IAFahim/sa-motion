@@ -1,4 +1,3 @@
-using System;
 using SA.Motion.Numerics;
 
 namespace SA.Motion.Mechanics

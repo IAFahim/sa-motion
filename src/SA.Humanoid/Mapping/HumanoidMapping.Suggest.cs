@@ -81,7 +81,7 @@ namespace SA.Humanoid.Mapping
             {
                 return 2;
             }
-            char[] separators = new char[] { '_', '-', '.', ' ', ':', '/', '\\', '|' };
+            char[] separators = new[] { '_', '-', '.', ' ', ':', '/', '\\', '|' };
             string[] parts = lower.Split(separators, StringSplitOptions.RemoveEmptyEntries);
             for (int i = 0; i < parts.Length; i++)
             {
