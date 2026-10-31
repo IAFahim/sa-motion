@@ -111,7 +111,7 @@ namespace SA.Motion.Mechanics
             var deviation = Deviation(relative, rest);
             var along = Float3.Dot(deviation.Vector, axis);
             var angle = 2f * (float)Math.Atan2(along, deviation.W);
-            var excess = 0f;
+            float excess;
             if (angle > limit.Max)
                 excess = angle - limit.Max;
             else if (angle < limit.Min)
