@@ -57,7 +57,7 @@ namespace SA.Reactions
                 var target = new RigidTransform(track.Rotation, track.Position);
                 var linear = (math.transform(target, centerOfMass) - math.transform(body, centerOfMass)) / Timestep;
                 var angular = RotationVector(math.mul(track.Rotation, math.inverse(body.rot))) / Timestep;
-                var gain = math.saturate(track.Gain);
+                var gain = 1f - math.pow(1f - math.saturate(track.Gain), math.min(1f, Timestep * 60f));
                 World.SetLinearVelocity(index, math.lerp(World.GetLinearVelocity(index), ClampLength(linear, track.MaxLinearSpeed), gain));
                 World.SetAngularVelocity(index, math.lerp(World.GetAngularVelocity(index), ClampLength(angular, track.MaxAngularSpeed), gain));
             }

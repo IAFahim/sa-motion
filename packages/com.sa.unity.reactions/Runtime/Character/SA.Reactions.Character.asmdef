@@ -16,7 +16,11 @@
   "excludePlatforms": [],
   "allowUnsafeCode": true,
   "overrideReferences": true,
-  "precompiledReferences": ["SA.Motion.dll", "SA.Humanoid.dll"],
+  "precompiledReferences": [
+    "SA.Motion.dll",
+    "SA.Humanoid.dll",
+    "SA.Balance.dll"
+  ],
   "autoReferenced": true,
   "defineConstraints": [],
   "versionDefines": [],

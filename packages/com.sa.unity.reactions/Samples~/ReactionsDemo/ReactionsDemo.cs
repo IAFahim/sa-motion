@@ -18,6 +18,7 @@ public class ReactionsDemo : MonoBehaviour
     public float CycleSeconds = 28f;
     public bool Scripted = true;
     public bool WriteTelemetry = true;
+    public bool HighRatePhysics;
 
     BlobAssetReference<Collider> ground;
     EntityManager manager;
@@ -34,9 +35,11 @@ public class ReactionsDemo : MonoBehaviour
         Application.targetFrameRate = 60;
         QualitySettings.vSyncCount = 0;
         manager = World.DefaultGameObjectInjectionWorld.EntityManager;
+        if (HighRatePhysics)
+            World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<FixedStepSimulationSystemGroup>().Timestep = 1f / 480f;
         var step = PhysicsStep.Default;
-        step.SubstepCount = 4;
-        step.SolverIterationCount = 16;
+        step.SubstepCount = HighRatePhysics ? 1 : 4;
+        step.SolverIterationCount = HighRatePhysics ? 8 : 16;
         manager.CreateSingleton(step);
         ground = BoxCollider.Create(new BoxGeometry { Center = float3.zero, Orientation = quaternion.identity, Size = new float3(60f, 1f, 60f), BevelRadius = 0f }, CollisionFilter.Default, new Unity.Physics.Material { Friction = 0.9f, Restitution = 0f, CollisionResponse = CollisionResponsePolicy.Collide });
         var floor = manager.CreateEntity(typeof(LocalTransform), typeof(PhysicsCollider), typeof(PhysicsWorldIndex));
@@ -44,7 +47,7 @@ public class ReactionsDemo : MonoBehaviour
         manager.SetComponentData(floor, new PhysicsCollider { Value = ground });
         ragdolls = manager.CreateEntityQuery(typeof(Ragdoll));
         inertials = manager.CreateEntityQuery(ComponentType.ReadWrite<TransitionIntent>(), ComponentType.ReadOnly<Rig>(), ComponentType.Exclude<Ragdoll>());
-        telemetry = new StringBuilder("time,mode,strength,pelvis_y,head_y,head_x,head_z,event\n");
+        telemetry = new StringBuilder("time,mode,strength,pelvis_y,head_y,head_x,head_z,event,decision,feet,margin,distL,distR\n");
     }
 
     void OnDestroy()
@@ -168,7 +171,7 @@ public class ReactionsDemo : MonoBehaviour
                 continue;
             var pelvis = manager.GetComponentData<LocalTransform>(bodies[(int)Role.Pelvis].Body).Position;
             var head = manager.GetComponentData<LocalTransform>(bodies[(int)Role.Head].Body).Position;
-            telemetry.Append($"{clock:F2},{ragdoll.Mode},{ragdoll.Strength:F2},{pelvis.y:F3},{head.y:F3},{head.x - pelvis.x:F3},{head.z - pelvis.z:F3},{(clock - lastHit < 0.15f ? lastHitLabel : "")}\n");
+            telemetry.Append($"{clock:F2},{ragdoll.Mode},{ragdoll.Strength:F2},{pelvis.y:F3},{head.y:F3},{head.x - pelvis.x:F3},{head.z - pelvis.z:F3},{(clock - lastHit < 0.15f ? lastHitLabel : "")},{(manager.HasComponent<BalanceControl>(rig) ? manager.GetComponentData<BalanceControl>(rig).Decision : -1)},{(manager.HasComponent<BalanceControl>(rig) ? manager.GetComponentData<BalanceControl>(rig).FootContacts : -1)},{(manager.HasComponent<BalanceControl>(rig) ? manager.GetComponentData<BalanceControl>(rig).Margin : 0f):F2},{(manager.HasComponent<BalanceControl>(rig) ? manager.GetComponentData<BalanceControl>(rig).DistanceLeft : 0f):F3},{(manager.HasComponent<BalanceControl>(rig) ? manager.GetComponentData<BalanceControl>(rig).DistanceRight : 0f):F3}\n");
         }
     }
 

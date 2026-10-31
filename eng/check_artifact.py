@@ -13,5 +13,9 @@ humanoid = hashlib.sha256((reactions / "Runtime/Plugins/SA.Humanoid.dll").read_b
 recorded_humanoid = json.loads((reactions / "artifact.json").read_text())["sha256"]
 if humanoid != recorded_humanoid:
     problems.append(f"reactions artifact.json {recorded_humanoid} != SA.Humanoid.dll {humanoid}")
+balance = hashlib.sha256((reactions / "Runtime/Plugins/SA.Balance.dll").read_bytes()).hexdigest()
+recorded_balance = json.loads((reactions / "artifact.balance.json").read_text())["sha256"]
+if balance != recorded_balance:
+    problems.append(f"reactions artifact.balance.json {recorded_balance} != SA.Balance.dll {balance}")
 print("\n".join(problems) if problems else f"artifacts consistent: SA.Motion {dll[:12]} SA.Humanoid {humanoid[:12]}")
 sys.exit(1 if problems else 0)

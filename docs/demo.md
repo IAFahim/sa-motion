@@ -24,6 +24,10 @@ Two Robot Kyles in one scene, running headless-verified in Unity 7000.0.0a12.
 
 Frames in the image above come from `capture game_view` of the same run.
 
+## Experimental: the capture-point controller inside Unity
+
+`RagdollAuthoring.BalanceController` hands the standing job to the MIT capture-point controller (`SA.Balance`, 93 of 100 in the pure .NET harness). It is **off by default and does not work yet in Unity Physics**: it takes over after one second of ground contact and the character then collapses. Known causes still to fix: the controller was tuned on the harness body (70 kg, 1.0 m pelvis, its own inertias), its frame and leg-length constants differ from Kyle, and it needs 480 Hz torque drives (`ReactionsDemo.HighRatePhysics`) while the demo normally runs at 60 Hz. The harness leaderboard is in `docs/leaderboard.md`.
+
 ## Not what it is
 
 - It is **physical animation**, not a GTA-style balance controller. Standing comes from tracking toward the animation. Nothing steps, braces or catches a fall.

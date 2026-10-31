@@ -22,6 +22,17 @@ namespace SA.Reactions
         public byte JointMode;
     }
 
+    public struct BalanceControl : IComponentData
+    {
+        public byte Enabled;
+        public byte Ready;
+        public byte Decision;
+        public byte FootContacts;
+        public float Margin;
+        public float DistanceLeft;
+        public float DistanceRight;
+    }
+
     [InternalBufferCapacity(0)]
     public struct RagdollRoleSpec : IBufferElementData
     {

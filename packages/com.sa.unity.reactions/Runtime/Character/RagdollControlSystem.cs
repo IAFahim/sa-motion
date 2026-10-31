@@ -45,8 +45,9 @@ namespace SA.Reactions
             else
                 ragdoll.Strength = math.min(ragdoll.MaxStrength, ragdoll.Strength + ragdoll.RecoverRate * dt);
             manager.SetComponentData(rig, ragdoll);
+            var balanced = ragdoll.Mode == RagdollMode.Tracking && manager.HasComponent<BalanceControl>(rig) && manager.GetComponentData<BalanceControl>(rig).Enabled != 0 && manager.GetComponentData<BalanceControl>(rig).Ready != 0;
             var tone = ragdoll.Mode == RagdollMode.Limp ? ragdoll.LimpTone : ragdoll.Strength;
-            WriteTargets(manager, rig, ragdoll.Strength, tone, bodies, specs);
+            WriteTargets(manager, rig, balanced ? 0f : ragdoll.Strength, balanced ? 0f : tone, bodies, specs);
         }
 
         const float LocalShare = 0.4f;

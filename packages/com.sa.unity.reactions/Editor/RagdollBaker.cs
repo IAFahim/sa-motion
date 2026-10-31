@@ -34,6 +34,8 @@ namespace SA.Reactions.Editor
                 LimpTone = authoring.LimpTone,
                 StrengthLossPerImpulse = authoring.StrengthLossPerImpulse
             });
+            if (authoring.BalanceController)
+                AddComponent(entity, new BalanceControl { Enabled = 1 });
             AddBuffer<RagdollBody>(entity);
             AddBuffer<RagdollHit>(entity);
             var specs = AddBuffer<RagdollRoleSpec>(entity);
