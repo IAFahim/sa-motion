@@ -177,4 +177,23 @@ public class ArmAssistUnitTests
         var inner = Evaluator.RunFast(() => new InnerBaseline());
         Assert.True(assisted >= inner - 5f, $"assisted {assisted} inner {inner}");
     }
+
+    [Fact]
+    public void FallingLatchedRaisesTheArmsToCushion()
+    {
+        var controller = new ArmAssistController();
+        var bodies = new ContractBody[15];
+        var targets = new Quaternion[15];
+        var drives = new ContractDrive[15];
+        for (var i = 0; i < 15; i++)
+        {
+            bodies[i] = MovingBody(0f, 20f);
+            targets[i] = Quaternion.Identity;
+        }
+        var feet = new ContractFoot[2];
+        var report = controller.Tick(bodies, feet, targets, 0.01666667f, drives);
+        Assert.Equal(ContractDecision.Falling, report.Decision);
+        Assert.NotEqual(Quaternion.Identity, drives[(int)Role.UpperArmLeft].TargetWorld);
+        Assert.NotEqual(Quaternion.Identity, drives[(int)Role.UpperArmRight].TargetWorld);
+    }
 }

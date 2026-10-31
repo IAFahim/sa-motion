@@ -1,0 +1,8 @@
+arm-assist: score 91/100, stand pass (drift 0.080 m, lean 4.9 deg), deterministic True
+impulse  recovered/8  fell  with steps  recovery s  peak m  latched falling
+     60            8     0           5        0.39    0.16                0
+    100            8     0           8        1.48    0.47                0
+    150            8     0           8        2.19    0.94                0
+    200            5     3           5        3.05    1.40                0
+    300            4     4           4        2.61    1.41                0
+    450            4     4           4        2.40    1.42                0

@@ -27,7 +27,6 @@ namespace SA.Balance.Arms
         public static float ArmStiffnessBoost => 2f;
 
         public static float TorsoRateGain => 0.05f;
-
         public static float TorsoRateMax => 0.15f;
 
         public static float CushionRaise => 1f;
