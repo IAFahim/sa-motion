@@ -1,40 +1,48 @@
 # SA.Motion
 
-SA.Motion is an engine-independent .NET library of finite-duration inertialization kernels plus a thin Unity bridge. The kernels (`ScalarDecay`, `VectorOffset`, `RotationOffset`, `PoseTransition` over `PoseHistory`) capture an offset from corrected output history and decay it to zero over a caller-chosen duration, so an interrupted motion restarts from the corrected pose and lands on the destination with zero end value, velocity and acceleration. Callers own state, timestamps and buffers; the kernels allocate no managed memory, touch no engine and return a default instead of throwing on bad input. Unity consumes the exact packed DLL through conversions and proof tests.
+SA.Motion is an engine-independent .NET motion library plus thin Unity adapters. Portable inertialization kernels and mechanics live in `src/SA.Motion`, the 15-role humanoid contract/mapping/profile in `src/SA.Humanoid`, a ported reaction controller in `src/SA.ReactionControl`, and the ragdoll packages plus a two-character demo under `packages/`. Everything portable is pure functions over caller-owned `readonly` structs: same input, same output, no throw on bad data. Unity only converts, schedules, and calls.
 
-## Where code goes
+## What exists today
 
-| If the code... | It lives in |
-|---|---|
-| compiles without Unity | `src/` (netstandard2.1, C# 9) |
-| must touch Entities, Physics, Burst attributes or rendering | `packages/` |
-| exchanges data with a physics engine | `src/` as plain structs: snapshot in, intent out. Never an interface, never a callback |
+| Layer | Paths | Licence |
+|---|---|---|
+| Portable library | `src/SA.Motion`: inertialization, frames/inertia, bounded quaternion drive | MIT |
+| Humanoid | `src/SA.Humanoid`: roles, rig mapping, cited mass profile, ragdoll layout | MIT |
+| Controller port | `src/SA.ReactionControl`: balance, fall, brace, drive, coordination, get-up | GPL-3.0-only |
+| Unity packages | `packages/com.sa.motion.unity` (bridge), `packages/com.sa.unity.reactions` (ragdoll) | MIT |
+| Demo | `Samples~/ReactionsDemo`: inertialized switcher plus physical-animation ragdoll | MIT |
 
-## Use
+How it fits together: `docs/architecture.md`. Every document: `docs/index.md`. Measured results: `docs/verification.md`.
 
-```csharp
-var source = Pose.Identity;
-source.Position = new Float3(2, 0, 0);
-var history = new PoseHistory();
-history.Reset(source);
-var transition = PoseTransition.Create(history, Pose.Identity, 0.5f);
-var start = PoseTransition.Apply(ref transition, Pose.Identity, 0f);
-var end = PoseTransition.Apply(ref transition, Pose.Identity, 1f);
+## Checks
+
+`eng/verify.sh` runs every check in one command; `eng/verify.sh --demo` adds the headless Reactions demo. Real output, run 2026-10-31 on this branch:
+
+```text
+source-rules                   pass     0s
+dotnet-SA.Harness              pass     0s
+dotnet-SA.Harness.Tests        pass     5s
+dotnet-SA.Humanoid.Tests       pass     2s
+dotnet-SA.Motion.Tests         pass     2s
+dotnet-SA.ReactionControl.Tests pass     2s
+bridge-pack                    pass     2s
+humanoid-pack                  pass     1s
+bridge-artifact-consistent     pass     0s
+unity-start                    pass     0s
+unity-compile                  pass   307s
+unity-SA.Tests                 pass     1s
+unity-SA.Motion.Unity.Tests    pass     1s
+unity-SA.Reactions.Tests       pass     1s
+reactions-demo                 pass    35s
+failures: 0 (logs and report.json in artifacts/verify)
 ```
 
-`start.Position` is the corrected source `(2, 0, 0)`; `end` is the destination pose. Needs `SA.Motion.Inertialization` and `SA.Motion.Numerics`. The same code runs asserted in `tests/SA.Motion.Tests/ReadmeSampleTests.cs`.
+That is 290 .NET tests (Motion 146, Humanoid 57, ReactionControl 79, Harness 8), three Unity suites, and 7 of 7 demo telemetry checks (`knockdown puts the pelvis on the floor`: pass). `python3 eng/check_source_rules.py` prints `source rules: ok`.
 
-## Build and test
+## Licence map
 
-```bash
-eng/dotnet_test.sh
-python3 eng/check_source_rules.py
-```
-
-Measured 2026-10-31 on the merged main: `eng/dotnet_test.sh` gives 134 passed, 0 failed, 0 skipped; `eng/dotnet_test.sh tests/SA.Humanoid.Tests/SA.Humanoid.Tests.csproj` gives 30 passed; `python3 eng/check_source_rules.py` prints `source rules: ok`.
+`src/SA.Motion`, `src/SA.Humanoid`, and both packages are MIT (see `LICENSE`). `src/SA.ReactionControl` and `tests/SA.ReactionControl.Tests` are GPL-3.0-only, translated from Delirium Physics rev `8e4ad4e` under Gate L; any build containing them stays private, with no registry, public repo, or binary release (see `docs/provenance.md`). No GTA files, game values, or unlock bypasses anywhere.
 
 ## Not built yet
 
-Planned work (reaction controller, Unity integration, GPU path) is listed in `docs/work-packets.md`. What exists is evidenced in `docs/verification.md`.
-
-Licence: MIT, see `LICENSE`.
+From `docs/work-packets.md`: R9 (assemble and tune one controller from the merged areas), then a GPL adapter package feeding it from `RoleBody` snapshots; recovery animation content (X2, so get-up returns "no suitable clip"); public IL2CPP/platform claims (X3); any release of `SA.ReactionControl` (X4, needs legal advice). From `docs/demo.md`: the demo is physical animation, not a balance controller; limp joints are ball-and-socket; recovery is a reset; single character, no crowd figures.
