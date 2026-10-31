@@ -237,7 +237,8 @@ namespace SA.Balance
             {
                 return;
             }
-            if (reach > q.FallReach)
+            float planarSpeed = (float)Math.Sqrt(velocity.X * velocity.X + velocity.Z * velocity.Z);
+            if (reach > q.FallReach || planarSpeed > q.FallSpeed)
             {
                 state.FallingLatched = true;
                 return;

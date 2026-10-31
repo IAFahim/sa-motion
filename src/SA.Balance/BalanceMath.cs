@@ -86,6 +86,7 @@ namespace SA.Balance
             q.StepShinLength = PositiveOr(q.StepShinLength, standard.StepShinLength);
             q.StepLead = NonNegativeOr(q.StepLead, standard.StepLead);
             q.MaxReach = PositiveOr(q.MaxReach, standard.MaxReach);
+            q.FallSpeed = PositiveOr(q.FallSpeed, standard.FallSpeed);
             q.FallReach = PositiveOr(q.FallReach, standard.FallReach);
             q.StanceBoost = PositiveOr(q.StanceBoost, standard.StanceBoost);
             q.FallToneStiffness = NonNegativeOr(q.FallToneStiffness, standard.FallToneStiffness);

@@ -65,6 +65,7 @@ Inner gains copy the harness hold schedule.
 | StepLead | 0.5 | Center velocity times swing time added to the step goal |
 | MaxReach | 0.6 | Step goal clamp that stays inside leg reach with a crouch |
 | FallReach | 1.5 | Capture distance past which no step sequence can catch the center |
+| FallSpeed | 2.35 | Center speed past which capture outruns any step within reach and time |
 | StanceBoost | 1.5 | Stance leg stiffness multiplier that carries single support |
 | FallToneStiffness | 8 | Falling latch low tone that goes limp without snapping |
 | FallToneDamping | 0.8 | Falling latch damping that avoids oscillation at low tone |

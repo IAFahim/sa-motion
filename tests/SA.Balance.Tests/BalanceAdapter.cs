@@ -16,12 +16,14 @@ namespace SA.Balance.Tests
         readonly BodyDrive[] _drives = new BodyDrive[15];
 
         public BalanceReport LastReport;
+        public bool SawStepping;
 
         public BalanceRunner(BalanceParams p)
         {
             _params = p;
             _state = new BalanceState();
             LastReport = default;
+            SawStepping = false;
         }
 
         public ControllerStep Step
@@ -64,6 +66,10 @@ namespace SA.Balance.Tests
             _feet[1] = contactRight;
             var input = new BalanceInput(_targets, dt);
             LastReport = StandingController.Tick(in _params, ref _state, _bodies, _feet, in input, _drives);
+            if (LastReport.Decision == Decision.Stepping)
+            {
+                SawStepping = true;
+            }
             int count = drives.Length < 15 ? drives.Length : 15;
             for (int i = 0; i < count; i++)
             {

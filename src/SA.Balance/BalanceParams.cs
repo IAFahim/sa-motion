@@ -49,6 +49,7 @@ namespace SA.Balance
         public float StepLead;
         public float MaxReach;
         public float FallReach;
+        public float FallSpeed;
         public float StanceBoost;
         public float FallToneStiffness;
         public float FallToneDamping;
@@ -103,6 +104,7 @@ namespace SA.Balance
                 p.StepLead = 0.5f;
                 p.MaxReach = 0.6f;
                 p.FallReach = 1.5f;
+                p.FallSpeed = 2.35f;
                 p.StanceBoost = 1.5f;
                 p.FallToneStiffness = 8f;
                 p.FallToneDamping = 0.8f;
