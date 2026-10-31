@@ -46,6 +46,8 @@ Pure .NET, start all at once. Shared rules: `docs/packets/R-common.md`. The shar
 | R8 | Get-up selection and root alignment | `getup.rs`, `ragdoll.rs` ~3076 | `GetUp/` |
 | H1 | Pure .NET articulated test harness (test support only) | none | `tests/SA.Harness*` |
 
+| N11 | Ragdoll layout from a mapped skeleton (unblocks U3 humanoid baker) | none (MIT) | `SA.Humanoid/Build/` |
+
 Second wave, after R1 and H1 merge: R2 (`nmdbm.rs` 843-1474, body adapter and tick), R9 (assemble all areas into one controller tick and tune it in H1), R10 (independent parameter profile and tuning log).
 
 ## Wave 3: still blocked
