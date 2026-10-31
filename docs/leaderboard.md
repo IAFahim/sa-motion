@@ -4,4 +4,5 @@ Scored by `tests/SA.Balance.Evaluation` in the pure .NET harness: stand 10 s (20
 
 | Rank | Controller | Score | Stand | Deterministic | Recovered of 8 at 60 / 100 / 150 / 200 / 300 / 450 |
 |---|---|---|---|---|---|
-| 1 | baseline-hold | 51 | FAIL | True | 8 / 8 / 1 / 2 / 2 / 2 |
+| 1 | capture-point | 80 | pass | True | 8 / 8 / 8 / 0 / 0 / 0 |
+| 2 | baseline-hold | 51 | FAIL | True | 8 / 8 / 1 / 2 / 2 / 2 |

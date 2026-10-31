@@ -7,13 +7,13 @@ using Xunit.Abstractions;
 
 namespace SA.Balance.Evaluation.Tests;
 
-sealed class Limp : IBalanceController
+sealed class Limp : SA.Balance.Contract.IBalanceController
 {
-    public ControllerReport Tick(ReadOnlySpan<BodyState> bodies, ReadOnlySpan<FootContact> feet, ReadOnlySpan<Quaternion> targetWorld, float dt, Span<BodyDrive> drives)
+    public SA.Balance.Contract.ControllerReport Tick(ReadOnlySpan<SA.Balance.Contract.BodyState> bodies, ReadOnlySpan<SA.Balance.Contract.FootContact> feet, ReadOnlySpan<Quaternion> targetWorld, float dt, Span<SA.Balance.Contract.BodyDrive> drives)
     {
         for (var i = 0; i < drives.Length; i++)
-            drives[i] = BodyDrive.Passive;
-        return new ControllerReport { Decision = ControllerDecision.Falling };
+            drives[i] = SA.Balance.Contract.BodyDrive.Passive;
+        return new SA.Balance.Contract.ControllerReport { Decision = SA.Balance.Contract.ControllerDecision.Falling };
     }
 
     public void Reset()
@@ -59,5 +59,23 @@ public class FastScoreTests
         var hold = Evaluator.RunFast(() => new BaselineHold());
         var limp = Evaluator.RunFast(() => new Limp());
         Assert.True(hold > limp, $"hold {hold} limp {limp}");
+    }
+}
+
+public class CapturePointScoreTests
+{
+    readonly ITestOutputHelper output;
+
+    public CapturePointScoreTests(ITestOutputHelper output) => this.output = output;
+
+    [Fact]
+    public void TheCapturePointControllerPublishesItsScorecard()
+    {
+        var card = Evaluator.Run("capture-point", () => new CapturePointController());
+        output.WriteLine(Evaluator.Table(card));
+        Evaluator.Write(card, Path.Combine(AppContext.BaseDirectory, "../../../../../artifacts/balance"));
+        Assert.True(card.StandPassed, Evaluator.Table(card));
+        Assert.True(card.Deterministic);
+        Assert.True(card.Score > 51, Evaluator.Table(card));
     }
 }

@@ -93,6 +93,13 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
+      "sa.balance": {
+        "type": "Project",
+        "dependencies": {
+          "SA.Humanoid": "[1.0.0, )",
+          "SA.Motion": "[0.1.0, )"
+        }
+      },
       "sa.balance.abstractions": {
         "type": "Project",
         "dependencies": {

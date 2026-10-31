@@ -1,0 +1,65 @@
+{
+  "Name": "capture-point",
+  "StandPassed": true,
+  "StandPeakDisplacement": 0.044266745,
+  "StandPeakLean": 6.16367,
+  "Deterministic": true,
+  "Rows": [
+    {
+      "Impulse": 60,
+      "Recovered": 8,
+      "Fell": 0,
+      "WithSteps": 5,
+      "MeanRecoverySeconds": 0.4583334,
+      "MeanPeakDisplacement": 0.16671023,
+      "LatchedFalling": 0
+    },
+    {
+      "Impulse": 100,
+      "Recovered": 8,
+      "Fell": 0,
+      "WithSteps": 8,
+      "MeanRecoverySeconds": 1.354167,
+      "MeanPeakDisplacement": 0.38570163,
+      "LatchedFalling": 0
+    },
+    {
+      "Impulse": 150,
+      "Recovered": 8,
+      "Fell": 0,
+      "WithSteps": 8,
+      "MeanRecoverySeconds": 2.5833337,
+      "MeanPeakDisplacement": 0.9265295,
+      "LatchedFalling": 0
+    },
+    {
+      "Impulse": 200,
+      "Recovered": 0,
+      "Fell": 8,
+      "WithSteps": 0,
+      "MeanRecoverySeconds": 0,
+      "MeanPeakDisplacement": 1.4587369,
+      "LatchedFalling": 8
+    },
+    {
+      "Impulse": 300,
+      "Recovered": 0,
+      "Fell": 8,
+      "WithSteps": 0,
+      "MeanRecoverySeconds": 0,
+      "MeanPeakDisplacement": 1.4594471,
+      "LatchedFalling": 8
+    },
+    {
+      "Impulse": 450,
+      "Recovered": 0,
+      "Fell": 8,
+      "WithSteps": 0,
+      "MeanRecoverySeconds": 0,
+      "MeanPeakDisplacement": 1.4593717,
+      "LatchedFalling": 8
+    }
+  ],
+  "Score": 80,
+  "Version": "1"
+}
