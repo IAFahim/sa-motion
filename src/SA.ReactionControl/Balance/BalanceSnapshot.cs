@@ -34,9 +34,9 @@ namespace SA.ReactionControl.Balance
                 if (!Scalar.IsFinite(body.InverseMass) || !(body.InverseMass > 0f))
                     continue;
                 var weight = body.InverseMass > 10000f ? 10000f : body.InverseMass;
-                com += body.Position * weight;
-                velocity += body.LinearVelocity * weight;
-                angular += body.AngularVelocity * weight;
+                com += BalanceMath.Sanitize(body.Position) * weight;
+                velocity += BalanceMath.Sanitize(body.LinearVelocity) * weight;
+                angular += BalanceMath.Sanitize(body.AngularVelocity) * weight;
                 mass += weight;
             }
             if (!(mass > 0f))

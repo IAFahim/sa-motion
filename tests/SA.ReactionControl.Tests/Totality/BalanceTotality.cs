@@ -136,7 +136,7 @@ public class BalanceTotality
         Fuzz.Value(longSnapshot.HeightTarget);
     }
 
-    [Fact(Skip = "OPEN GAP: SnapshotBuilder.TryBuild returns true with non-finite Com on overflow-magnitude inputs; FootPlacement.Update copies it into feet.Centre.")]
+    [Fact]
     public void BalanceOverflowCom_OpenGap()
     {
         var bodies = new RoleBody[Roles.Count];

@@ -133,7 +133,7 @@ public class BodyBalanceTotality
         }
     }
 
-    [Fact(Skip = "OPEN GAP: BodyBalance.LeanAngles propagates NaN components to its result instead of returning a finite default.")]
+    [Fact]
     public void LeanAnglesNaN_OpenGap()
     {
         var lean = BodyBalance.LeanAngles(new Float3(0f, 0f, 0f), new Float3(0f, float.NaN, 0f), new Float3(0f, 0f, 1f));

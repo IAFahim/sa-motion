@@ -35,6 +35,10 @@ namespace SA.ReactionControl
 
         public static Float3 LeanAngles(Float3 fx, Float3 fy, Float3 fz)
         {
+            if (!fx.IsFinite || !fy.IsFinite || !fz.IsFinite)
+            {
+                return Float3.Zero;
+            }
             float yaw = AsinClamped(fz.Y);
             float guard = Abs((float)Math.Cos(yaw));
             if (guard < 1e-3f)
