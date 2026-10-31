@@ -15,13 +15,14 @@ namespace SA.ReactionControl.BalanceTick
         public const float ServoHipDamping = 10f;
         public const float ServoKneeStrength = 900f;
         public const float ServoKneeDamping = 8f;
-        public const float ServoAnkleStrength = 700f;
-        public const float ServoAnkleDamping = 3f;
+        public const float ServoAnkleStrength = 3000f;
+        public const float ServoAnkleDamping = 5.3f;
         public const float ServoSpineStrength = 200f;
         public const float ServoSpineDamping = 5f;
         public const float ServoMaxTorque = 500f;
         public const float PelvisDamping = 30f;
         public const float StepDeadband = 0.09f;
+        public const int FlightLimit = 25;
         public const float MaxHeightCorrection = 0.1f;
         public const float TaperBendReference = 0.2f;
         public const float TaperRate = 2.0f;
@@ -136,6 +137,19 @@ namespace SA.ReactionControl.BalanceTick
                 if (!(want > StepDeadband))
                     state.Feet = feetBefore;
             }
+            if (state.Feet.SteppingLeg != 0)
+            {
+                if (steppingBefore == 0)
+                    state.FlightLeft = FlightLimit;
+                else if (state.FlightLeft > 0)
+                    state.FlightLeft--;
+                if (state.FlightLeft <= 0)
+                    ForceLand(up, snapshot, tick.MaxStepDelay, ref state);
+            }
+            else
+            {
+                state.FlightLeft = 0;
+            }
             if (state.Feet.LeftPlanted)
             {
                 if (!feetBefore.LeftPlanted)
@@ -155,10 +169,10 @@ namespace SA.ReactionControl.BalanceTick
                 state.Feet.FootRight = holdRight;
             }
             var pelvisY = Float3.Dot(BalanceMath.Sanitize(bodies[(int)Role.Pelvis].Position), up);
-            var leftY = Float3.Dot(state.Feet.FootLeft, up);
-            var rightY = Float3.Dot(state.Feet.FootRight, up);
-            var lowY = leftY < rightY ? leftY : rightY;
-            var correction = (pelvisY - lowY) - tick.PelvisHeight;
+            var groundY = state.Feet.HeightLeft < state.Feet.HeightRight ? state.Feet.HeightLeft : state.Feet.HeightRight;
+            if (!Scalar.IsFinite(groundY))
+                groundY = 0f;
+            var correction = (pelvisY - groundY) - tick.PelvisHeight;
             if (!Scalar.IsFinite(correction))
                 correction = 0f;
             if (correction > MaxHeightCorrection)
@@ -329,6 +343,26 @@ namespace SA.ReactionControl.BalanceTick
                     return false;
             }
             return true;
+        }
+
+        static void ForceLand(Float3 up, in BalanceSnapshot snapshot, int maxStepDelay, ref BalanceControllerState state)
+        {
+            var steppingRight = state.Feet.SteppingLeg == 2;
+            var leg = steppingRight ? snapshot.Right : snapshot.Left;
+            var actual = BalanceMath.Sanitize(leg.Foot.Frame.Position);
+            var groundY = steppingRight ? state.Feet.HeightRight : state.Feet.HeightLeft;
+            if (!Scalar.IsFinite(groundY))
+                groundY = Float3.Dot(actual, up);
+            var flat = BalanceMath.SetHeight(actual, up, groundY);
+            if (steppingRight)
+                state.Feet.FootRight = BalanceMath.Sanitize(flat);
+            else
+                state.Feet.FootLeft = BalanceMath.Sanitize(flat);
+            state.Feet.LeftPlanted = snapshot.SupportLeft.Contact;
+            state.Feet.RightPlanted = snapshot.SupportRight.Contact;
+            state.Feet.SteppingLeg = 0;
+            state.Feet.Countdown = maxStepDelay > 0 && maxStepDelay < 1000000 ? maxStepDelay : 30;
+            state.FlightLeft = 0;
         }
 
         static float SeedClearance(in BalanceSnapshot snapshot, SupportProbe left, SupportProbe right, Float3 up)

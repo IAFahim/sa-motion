@@ -22,6 +22,7 @@ namespace SA.ReactionControl.BalanceTick
         public Float3 PlantLeft;
         public Float3 PlantRight;
         public float AnkleClearance;
+        public int FlightLeft;
         public bool FallingLatched;
         public bool Seeded;
         public float LastComHeight;

@@ -77,6 +77,8 @@ Zero is a problem only where the Range uses an open lower bound; everywhere else
 | Balance | SpineStrength | N m/rad (×m) | (0, 10000] | 100 | A:larger joints get stiffer servos | no |
 | Balance | SpineDamping | N m s/rad (×m) | [0, 1000] | 10 | A:larger joints get stiffer servos | no |
 | Balance | MaxTorque | N m (×m) | (0, 10000] | 400 | A:drive clamp | no |
+| Balance | AnkleClearance | m (×h) | [0, 0.5] | 0.0 | A:sole-to-ankle offset, runtime-seeded by tick | no |
+| Balance | SwingStiffness | 1 | [0, 1] | 0.25 | A:swing-leg stiffness scale, full damping kept | no |
 | BodyBalance | BodyStiffness | stiffness (×m) | (0, 100] | 9 | S:131 | no |
 | BodyBalance | ElbowGain | 1 | [0, 5] | 0.6 | S:13 | no |
 | BodyBalance | Damping | 1 | [0, 5] | 0.7 | S:70 | no |
@@ -192,3 +194,9 @@ Date | Scenario | Area.Field | Before | After | Measured effect | Who
 2026-10-31 | StandTenSeconds | Balance.PelvisHeight | 0.95 | 1.0 | fall 38 -> 62 ticks (0.95 crouches 39 deg from 1.00 start) | R2b
 2026-10-31 | StandTenSeconds | Balance.SupportInsideMargin | -0.18 | 0.0 | gate functional with horizontal quad; 62 -> 62 alone, steps gated from t15 to t55 | R2b
 2026-10-31 | StandTenSeconds | Balance.AnkleClearance | n/a (new) | 0.0 | runtime-seeded 0.10 by tick; sole-space goals reach ankle | R2b
+2026-10-31 | StandTenSeconds | Balance.SwingStiffness | n/a (new) | 0.25 | swing foot rocket 0.63 m -> tracks 0.09 m; firstFall 81 -> 86 | R2c
+2026-10-31 | StandTenSeconds | tick ServoAnkleStrength/Damping | 700/3 | 3000/5.3 | firstFall 88 -> 97 (E22; damping matched to coupled inertia) | R2c
+2026-10-31 | StandTenSeconds | tick ServoHipStrength | 1000 | 2000 | firstFall 86 -> 88 but tilt 14.5 -> 23.8; reverted, then verified 2000 masks ankle gain (97 -> 117 on revert) | R2c
+2026-10-31 | StandTenSeconds | tick ServoSpineStrength/Damping | 200/5 | 400/6.5 | firstFall 117 -> 83; reverted (torso drive whiplashes pelvis anchor) | R2c
+2026-10-31 | StandTenSeconds | Balance.PelvisHeight | 1.0 | 0.97 | firstFall 86 -> 85 neutral; reverted (keeps R10 HalfHeight expectation at 1.0) | R2c
+2026-10-31 | StandTenSeconds | Balance.AnkleClearance (SolveLeg offset) | +0.10 m | removed (0) | 80 -> 129; offset crouch buckles knee servo, R9 must re-tune | R2c

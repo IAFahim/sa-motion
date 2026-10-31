@@ -102,6 +102,7 @@ namespace SA.ReactionControl.Balance
         public float SpineStrength;
         public float SpineDamping;
         public float MaxTorque;
+        public float SwingStiffness;
 
         public static BalanceParams Standard => new BalanceParams
         {
@@ -198,7 +199,8 @@ namespace SA.ReactionControl.Balance
             AnkleDamping = 6.0f,
             SpineStrength = 100.0f,
             SpineDamping = 10.0f,
-            MaxTorque = 400.0f
+            MaxTorque = 400.0f,
+            SwingStiffness = 0.25f
         };
     }
 

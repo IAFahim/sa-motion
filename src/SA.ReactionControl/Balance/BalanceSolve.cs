@@ -106,10 +106,9 @@ namespace SA.ReactionControl.Balance
             bool left)
         {
             var leg = left ? s.Left : s.Right;
+            if (swing && Scalar.IsFinite(p.SwingStiffness) && p.SwingStiffness >= 0f)
+                hipStrength *= p.SwingStiffness;
             var goal = BalanceMath.Sanitize(target);
-            var clearance = Scalar.IsFinite(p.AnkleClearance) && p.AnkleClearance > 0f ? p.AnkleClearance : 0f;
-            if (clearance > 0f)
-                goal = goal + up * clearance;
             var lead = swing ? p.SwingLeadGain : 0f;
             if (lead > 0f && Scalar.IsFinite(lead))
                 goal = LeadTarget(goal, lead, hipStrength, hipDamping, p.MinLeadDistance, leg.Hip, s.Pelvis, s.Velocity);
@@ -282,6 +281,8 @@ namespace SA.ReactionControl.Balance
             bool left)
         {
             var leg = left ? s.Left : s.Right;
+            if (!planted && Scalar.IsFinite(p.SwingStiffness) && p.SwingStiffness >= 0f)
+                strength *= p.SwingStiffness;
             var ankle = leg.Ankle;
             var cleanNormal = BalanceMath.Sanitize(normal);
             if (!(cleanNormal.Length > 1e-6f))
@@ -448,6 +449,7 @@ namespace SA.ReactionControl.Balance
             Span<JointDrive> drives)
         {
             var clean = side >= 0f ? 1f : -1f;
+            var swingScale = !planted && Scalar.IsFinite(p.SwingStiffness) && p.SwingStiffness >= 0f ? p.SwingStiffness : 1f;
             var desiredTwist = Scalar.IsFinite(leg.Hip.Desired.Z) ? leg.Hip.Desired.Z : 0f;
             var desiredLean1 = Scalar.IsFinite(leg.Hip.Desired.X) ? leg.Hip.Desired.X : 0f;
             var desiredLean2 = Scalar.IsFinite(leg.Hip.Desired.Y) ? leg.Hip.Desired.Y : 0f;
@@ -458,7 +460,7 @@ namespace SA.ReactionControl.Balance
             var hipTarget = Quaternion.Multiply(
                 BalanceMath.SanitizeRotation(leg.Hip.Frame.Rotation),
                 Quaternion.Multiply(hipCorrection, Frames.Relative(leg.Hip.Frame, leg.Thigh.Frame).Rotation));
-            drives[(int)hipRole] = MakeDrive(hipTarget, p.HipStrength, p.HipDamping, ceiling);
+            drives[(int)hipRole] = MakeDrive(hipTarget, p.HipStrength * swingScale, p.HipDamping, ceiling);
             var desiredKnee = Scalar.IsFinite(leg.Knee.Desired) ? leg.Knee.Desired : 0f;
             var actualKnee = Scalar.IsFinite(leg.Knee.Actual) ? leg.Knee.Actual : 0f;
             var kneeTarget = Quaternion.Multiply(
@@ -466,7 +468,7 @@ namespace SA.ReactionControl.Balance
                 Quaternion.Multiply(
                     Quaternion.AxisAngle(new Float3(1f, 0f, 0f), actualKnee - desiredKnee),
                     Frames.Relative(leg.Knee.Frame, leg.Shin.Frame).Rotation));
-            drives[(int)kneeRole] = MakeDrive(kneeTarget, p.KneeStrength, p.KneeDamping, ceiling);
+            drives[(int)kneeRole] = MakeDrive(kneeTarget, p.KneeStrength * swingScale, p.KneeDamping, ceiling);
             var desiredPitch = Scalar.IsFinite(leg.Ankle.Desired.X) ? leg.Ankle.Desired.X : 0f;
             var desiredYaw = Scalar.IsFinite(leg.Ankle.Desired.Y) ? leg.Ankle.Desired.Y : 0f;
             var desiredAnkle = Quaternion.Multiply(
@@ -476,7 +478,7 @@ namespace SA.ReactionControl.Balance
             var ankleTarget = Quaternion.Multiply(
                 anchor,
                 Quaternion.Multiply(desiredAnkle, Frames.Relative(leg.Ankle.Frame, leg.Foot.Frame).Rotation));
-            drives[(int)ankleRole] = MakeDrive(ankleTarget, p.AnkleStrength, p.AnkleDamping, ceiling);
+            drives[(int)ankleRole] = MakeDrive(ankleTarget, p.AnkleStrength * swingScale, p.AnkleDamping, ceiling);
         }
 
         static JointDrive MakeDrive(Quaternion target, float stiffness, float damping, float ceiling)

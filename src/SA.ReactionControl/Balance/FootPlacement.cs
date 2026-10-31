@@ -316,7 +316,8 @@ namespace SA.ReactionControl.Balance
                 liftWorld = Float3.Dot(footPos, up);
             if (toe < 0f || passed)
                 speed = -1f;
-            var placed = BalanceMath.SetHeight(lifted, up, liftWorld);
+            var commit = spanFraction < 0.5f;
+            var placed = commit ? BalanceMath.SetHeight(lifted, up, Float3.Dot(ground, up)) : BalanceMath.SetHeight(lifted, up, liftWorld);
             var correction = BalanceMath.ClampLength(BalanceMath.Horizontal(placed - footPos, up), 0f, p.MaxStepCorrection);
             var settled = Reach(placed + correction, up, s.Pelvis.Frame, p.StepClamp * leg.Hip.HalfLean1, p.StepClamp * leg.Hip.HalfLean2, p);
             if (steppingRight)
@@ -336,7 +337,8 @@ namespace SA.ReactionControl.Balance
                 f.RightPlanted = s.SupportRight.Contact;
             }
             var otherContact = steppingRight ? s.SupportLeft.Contact : s.SupportRight.Contact;
-            var landed = contact && speed < 0f && (spanFraction < 0.5f || (f.NearFootStep && f.NoContactStep));
+            var touchedDown = contact && otherContact && spanFraction < 0.5f;
+            var landed = (contact && speed < 0f && (spanFraction < 0.5f || (f.NearFootStep && f.NoContactStep))) || touchedDown;
             if (landed || (contact && !otherContact))
             {
                 f.LeftPlanted = s.SupportLeft.Contact;
