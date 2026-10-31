@@ -1,4 +1,4 @@
-using SA.Balance;
+using SA.Balance.Contract;
 using SA.Balance.Evaluation;
 using SA.Humanoid;
 using SA.Motion.Numerics;

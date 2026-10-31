@@ -2,7 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using SA.Motion.Numerics;
 
-namespace SA.Balance
+namespace SA.Balance.Contract
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct BodyState

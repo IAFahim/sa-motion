@@ -1,3 +1,5 @@
+using SA.Balance.Contract;
+
 namespace SA.Balance.Evaluation;
 
 public sealed record PushRow(float Impulse, int Recovered, int Fell, int WithSteps, float MeanRecoverySeconds, float MeanPeakDisplacement, int LatchedFalling);
