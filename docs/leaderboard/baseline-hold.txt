@@ -1,0 +1,8 @@
+baseline-hold: score 51/100, stand FAIL (drift 0.151 m, lean 56.2 deg), deterministic True
+impulse  recovered/8  fell  with steps  recovery s  peak m  latched falling
+     60            8     0           0        4.98    0.18                0
+    100            8     0           0        5.00    0.35                0
+    150            1     7           1        5.00    1.07                0
+    200            2     6           1        5.00    1.19                0
+    300            2     6           1        5.00    1.18                0
+    450            2     6           1        5.00    1.19                0
