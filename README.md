@@ -1,26 +1,40 @@
 # SA.Motion
 
-Engine-independent, unmanaged finite-duration inertialization kernels. The library targets .NET Standard 2.1; standalone tests use .NET 10. Unity consumes the exact packed DLL through a thin UPM bridge.
+SA.Motion is an engine-independent .NET library of finite-duration inertialization kernels plus a thin Unity bridge. The kernels (`ScalarDecay`, `VectorOffset`, `RotationOffset`, `PoseTransition` over `PoseHistory`) capture an offset from corrected output history and decay it to zero over a caller-chosen duration, so an interrupted motion restarts from the corrected pose and lands on the destination with zero end value, velocity and acceleration. Callers own state, timestamps and buffers; the kernels allocate no managed memory, touch no engine and return a default instead of throwing on bad input. Unity consumes the exact packed DLL through conversions and proof tests.
 
-`ScalarDecay` uses a normalized-time quintic. `VectorOffset`, `RotationOffset` and `PoseTransition` capture offsets from corrected output histories and apply them over the current destination. Callers own state, timestamps and buffers. No Unity dependency, allocation, clock or solver is hidden in the kernels.
+## Where code goes
 
-The radial construction preserves the initial pose in valid cases and has finite-duration zero value/velocity/acceleration endpoints. It does not guarantee unconditional full-vector initial velocity continuity: perpendicular velocity is projected away and away-going radial velocity is clamped. Degenerate-duration and signed-scale policies can choose the destination directly.
-
-The independently authored implementation follows the mathematical specification in David Bollo's [GDC 2018 slides](https://media.gdcvault.com/gdc2018/presentations/bollo_david_inertialization_high_performance.pdf). It contains no Delirium controller translation, gated tuning or game assets. The separately planned controller port remains subject to its source-rights/data gates.
-
-NuGet and Unity/Burst/player compatibility are measured independently. Local package output is not a registry publication.
+| If the code... | It lives in |
+|---|---|
+| compiles without Unity | `src/` (netstandard2.1, C# 9) |
+| must touch Entities, Physics, Burst attributes or rendering | `packages/` |
+| exchanges data with a physics engine | `src/` as plain structs: snapshot in, intent out. Never an interface, never a callback |
 
 ## Use
 
 ```csharp
+var source = Pose.Identity;
+source.Position = new Float3(2, 0, 0);
 var history = new PoseHistory();
-history.Reset(currentOutput);
-var correction = PoseTransition.Create(history, destination, 0.3f);
-var output = PoseTransition.Apply(ref correction, destination, elapsedSeconds);
+history.Reset(source);
+var transition = PoseTransition.Create(history, Pose.Identity, 0.5f);
+var start = PoseTransition.Apply(ref transition, Pose.Identity, 0f);
+var end = PoseTransition.Apply(ref transition, Pose.Identity, 1f);
 ```
 
-Retain corrected output history with its actual sample interval and rebuild offsets on a new request. `Apply` takes state by ref so invalid signed destination scale clears the scale-only correction rather than reviving it later. Invalid quaternion history contributes no invented velocity.
+`start.Position` is the corrected source `(2, 0, 0)`; `end` is the destination pose. Needs `SA.Motion.Inertialization` and `SA.Motion.Numerics`. The same code runs asserted in `tests/SA.Motion.Tests/ReadmeSampleTests.cs`.
 
-Canonical production code is `src/SA.Motion`; `packages/com.sa.motion.unity` contains only the pinned DLL, Unity conversions and proof tests. `eng/pack_bridge.py` builds a local NuGet, verifies its consumer/hash, and stages the exact artifact. Unity projects can add that canonical package location as a local UPM file dependency and add it to manifest `testables` for the proof suite.
+## Build and test
 
-The [verification record](docs/verification.md) reports 38 passing .NET tests, the local NuGet consumer and 3 native-Burst/managed Editor bridge tests. A follow-on [player proof](docs/player-verification.md) passes on Linux CoreCLR/native Burst with the same measured DLL identity; IL2CPP and other platforms remain unverified. [Provenance](docs/provenance.md) explains the independent current implementation and the separately gated future controller work.
+```bash
+eng/dotnet_test.sh
+python3 eng/check_source_rules.py
+```
+
+Measured 2026-10-31: `eng/dotnet_test.sh` gives `Passed: 39, Failed: 0, Skipped: 0`; `python3 eng/check_source_rules.py` prints `source rules: ok`.
+
+## Not built yet
+
+Planned work (reaction controller, Unity integration, GPU path) is listed in `docs/work-packets.md`. What exists is evidenced in `docs/verification.md`.
+
+Licence: MIT, see `LICENSE`.
