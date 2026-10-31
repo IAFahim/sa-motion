@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../SA.Balance/SA.Balance.csproj" />
+    <ProjectReference Include="../SA.Balance.Abstractions/SA.Balance.Abstractions.csproj" />
+    <ProjectReference Include="../SA.Motion/SA.Motion.csproj" />
+    <ProjectReference Include="../SA.Humanoid/SA.Humanoid.csproj" />
+  </ItemGroup>
+</Project>
