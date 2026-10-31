@@ -1,0 +1,25 @@
+{
+  "name": "SA.Reactions.Tests",
+  "rootNamespace": "SA.Reactions.Tests",
+  "references": [
+    "SA.Reactions",
+    "SA.Motion.Unity",
+    "Unity.Burst",
+    "Unity.Collections",
+    "Unity.Entities",
+    "Unity.Mathematics",
+    "Unity.Physics",
+    "Unity.Transforms",
+    "UnityEngine.TestRunner",
+    "UnityEditor.TestRunner"
+  ],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": true,
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll", "SA.Motion.dll"],
+  "autoReferenced": false,
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

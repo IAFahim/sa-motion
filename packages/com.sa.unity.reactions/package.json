@@ -1,0 +1,9 @@
+{
+  "name": "com.sa.unity.reactions",
+  "version": "0.1.0",
+  "displayName": "SA Reactions",
+  "description": "Physics-driven pose tracking for Unity Physics ragdolls: bounded angular-impulse drives applied after the physics world is built.",
+  "unity": "7000.0",
+  "license": "MIT",
+  "author": { "name": "SA" }
+}
