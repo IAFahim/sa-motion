@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/SA.Motion/SA.Motion.csproj" />
+    <ProjectReference Include="../../src/SA.Humanoid/SA.Humanoid.csproj" />
+    <ProjectReference Include="../../src/SA.ReactionControl/SA.ReactionControl.csproj" />
+  </ItemGroup>
+</Project>
