@@ -81,7 +81,13 @@ namespace SA.Balance
             q.StepMargin = NonNegativeOr(q.StepMargin, standard.StepMargin);
             q.StepHeight = NonNegativeOr(q.StepHeight, standard.StepHeight);
             q.StepTime = PositiveOr(q.StepTime, standard.StepTime);
+            q.StepAnkleHeight = PositiveOr(q.StepAnkleHeight, standard.StepAnkleHeight);
+            q.StepThighLength = PositiveOr(q.StepThighLength, standard.StepThighLength);
+            q.StepShinLength = PositiveOr(q.StepShinLength, standard.StepShinLength);
+            q.StepLead = NonNegativeOr(q.StepLead, standard.StepLead);
             q.MaxReach = PositiveOr(q.MaxReach, standard.MaxReach);
+            q.FallReach = PositiveOr(q.FallReach, standard.FallReach);
+            q.StanceBoost = PositiveOr(q.StanceBoost, standard.StanceBoost);
             q.FallToneStiffness = NonNegativeOr(q.FallToneStiffness, standard.FallToneStiffness);
             q.FallToneDamping = NonNegativeOr(q.FallToneDamping, standard.FallToneDamping);
             q.FallToneTorque = NonNegativeOr(q.FallToneTorque, standard.FallToneTorque);
@@ -293,6 +299,78 @@ namespace SA.Balance
                 return basis;
             }
             return Quaternion.Normalize(Quaternion.Multiply(shift, SanitizeOrientation(basis, Quaternion.Identity)));
+        }
+        public static Float3 HipJoint(BodyState pelvis, int side)
+        {
+            Float3 center = SanitizeVector(pelvis.Position, Float3.Zero);
+            float lateral = side < 0 ? -0.11f : 0.11f;
+            return center + new Float3(lateral, -0.04f, 0f);
+        }
+
+        public static bool SolveKnee(Float3 hip, Float3 ankle, float thigh, float shin, out Float3 knee)
+        {
+            knee = hip + new Float3(0f, -thigh, 0f);
+            if (!(thigh > 1e-6f) || !(shin > 1e-6f))
+            {
+                return false;
+            }
+            Float3 span = ankle - hip;
+            float distance = span.Length;
+            float reach = thigh + shin - 1e-4f;
+            if (!(distance > 1e-9f))
+            {
+                return false;
+            }
+            if (distance > reach)
+            {
+                span = span * (reach / distance);
+                distance = reach;
+            }
+            Float3 direction = span / distance;
+            float cosine = (thigh * thigh + distance * distance - shin * shin) / (2f * thigh * distance);
+            cosine = Clamp(cosine, -1f, 1f);
+            float sine = (float)System.Math.Sqrt(1f - cosine * cosine);
+            Float3 hint = new Float3(0f, 0f, 1f);
+            Float3 axis = Float3.Cross(direction, hint);
+            if (!(axis.LengthSquared > 1e-12f))
+            {
+                axis = new Float3(1f, 0f, 0f);
+            }
+            axis = axis / axis.Length;
+            Float3 bend = Float3.Cross(axis, direction);
+            if (!(bend.LengthSquared > 1e-12f))
+            {
+                return false;
+            }
+            bend = bend / bend.Length;
+            knee = hip + (direction * cosine + bend * sine) * thigh;
+            return knee.IsFinite;
+        }
+
+        public static Quaternion MapAxisY(Float3 direction)
+        {
+            if (!direction.IsFinite || !(direction.LengthSquared > 1e-12f))
+            {
+                return Quaternion.Identity;
+            }
+            Float3 unit = direction / direction.Length;
+            float cosine = Clamp(unit.Y, -1f, 1f);
+            if (cosine > 1f - 1e-6f)
+            {
+                return Quaternion.Identity;
+            }
+            if (cosine < -1f + 1e-6f)
+            {
+                return Quaternion.AxisAngle(new Float3(1f, 0f, 0f), Scalar.Pi);
+            }
+            Float3 axis = new Float3(unit.Z, 0f, -unit.X);
+            float length = axis.Length;
+            if (!(length > 1e-9f))
+            {
+                return Quaternion.Identity;
+            }
+            float angle = (float)System.Math.Acos(cosine);
+            return Quaternion.Normalize(Quaternion.AxisAngle(axis / length, angle));
         }
     }
 }

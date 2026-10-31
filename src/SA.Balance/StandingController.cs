@@ -21,6 +21,15 @@ namespace SA.Balance
                 FillPassive(drives);
                 return NeutralReport();
             }
+            float dt = input.Timestep;
+            if (!Scalar.IsFinite(dt) || dt <= 0f)
+            {
+                dt = 0.01666667f;
+            }
+            if (dt > 0.03333334f)
+            {
+                dt = 0.03333334f;
+            }
             BodyState pelvis = SanitizeBody(bodies[(int)Role.Pelvis]);
             BodyState torso = SanitizeBody(bodies[(int)Role.Torso]);
             if (!state.HasStart)
@@ -35,7 +44,15 @@ namespace SA.Balance
             Float3 capture = BalanceMath.CapturePoint(com, comVelocity, q);
             Float3 fallback = new Float3(pelvis.Position.X, 0f, pelvis.Position.Z);
             Float3 support = BalanceMath.SupportCenter(feet, fallback);
-            float margin = DistanceXZ(capture, support) - q.SupportRadius;
+            float reach = DistanceXZ(capture, support);
+            float margin = reach - q.SupportRadius;
+            UpdateSwing(bodies, capture, support, comVelocity, reach, margin, dt, q, ref state);
+            if (state.FallingLatched)
+            {
+                WriteFallTone(bodies, q, drives, count);
+                FinishTick(capture, ref state);
+                return new BalanceReport(Decision.Falling, com, capture, margin, -1);
+            }
             float heightError = state.StartPelvis.Y - pelvis.Position.Y;
             float flex = BalanceMath.Clamp(heightError * q.HeightGain, -q.HeightMax, q.HeightMax);
             Float3 upright = UprightOffset(torso, q);
@@ -43,14 +60,25 @@ namespace SA.Balance
             Float3 hip = HipOffset(capture, support, comVelocity, q);
             Float3 torsoLean = upright + hip;
             Float3 pelvisRoll = new Float3(0f, 0f, hip.Z * 0.5f);
+            Quaternion swingThigh = Quaternion.Identity;
+            Quaternion swingShin = Quaternion.Identity;
+            bool hasSwing = SwingTargets(bodies, q, ref state, out swingThigh, out swingShin);
             for (int i = 0; i < count; i++)
             {
                 var role = (Role)i;
                 BodyState body = SanitizeBody(bodies[i]);
                 Quaternion target = BaseTarget(input.TargetWorld, i, body.Rotation);
                 target = ApplyCorrection(target, role, torsoLean, pelvisRoll, ankle, flex, q);
+                if (hasSwing)
+                {
+                    target = OverrideSwing(target, role, state.SwingFoot, swingThigh, swingShin);
+                }
                 float stiffness = BalanceMath.StiffnessFor(role, q);
                 float damping = BalanceMath.DampingFor(role, q);
+                if (hasSwing && IsStanceLeg(role, state.SwingFoot))
+                {
+                    stiffness *= q.StanceBoost;
+                }
                 var drive = new BodyDrive();
                 drive.TargetWorld = target;
                 drive.Stiffness = stiffness;
@@ -62,11 +90,15 @@ namespace SA.Balance
             {
                 drives[i] = BodyDrive.Passive;
             }
-            if (state.Ticks < int.MaxValue)
+            FinishTick(capture, ref state);
+            if (hasSwing)
             {
-                state.Ticks++;
+                return new BalanceReport(Decision.Stepping, com, capture, margin, state.SwingFoot);
             }
-            state.LastCapture = capture;
+            if (margin > 0f)
+            {
+                return new BalanceReport(Decision.Recovering, com, capture, margin, -1);
+            }
             return new BalanceReport(Decision.Standing, com, capture, margin, -1);
         }
 
@@ -165,6 +197,159 @@ namespace SA.Balance
                 default:
                     return target;
             }
+        }
+        static bool IsStanceLeg(Role role, int swingFoot)
+        {
+            if (swingFoot == 0)
+            {
+                return role == Role.ThighRight || role == Role.ShinRight || role == Role.FootRight;
+            }
+            if (swingFoot == 1)
+            {
+                return role == Role.ThighLeft || role == Role.ShinLeft || role == Role.FootLeft;
+            }
+            return false;
+        }
+
+        static void UpdateSwing(ReadOnlySpan<BodyState> bodies, Float3 capture, Float3 support, Float3 velocity, float reach, float margin, float dt, BalanceParams q, ref BalanceState state)
+        {
+            if (state.SwingFoot == 0 || state.SwingFoot == 1)
+            {
+                state.SwingTime += dt;
+                if (state.SwingTime >= q.StepTime)
+                {
+                    state.SwingFoot = -1;
+                    state.SwingTime = 0f;
+                }
+                return;
+            }
+            state.SwingFoot = -1;
+            state.SwingTime = 0f;
+            if (state.FallingLatched)
+            {
+                return;
+            }
+            if (!(margin > q.StepMargin))
+            {
+                return;
+            }
+            if (!(reach > 1e-6f))
+            {
+                return;
+            }
+            if (reach > q.FallReach)
+            {
+                state.FallingLatched = true;
+                return;
+            }
+            Float3 direction = (capture - support) / reach;
+            Float3 lead = new Float3(velocity.X, 0f, velocity.Z) * (q.StepTime * q.StepLead);
+            Float3 goal = capture + lead + direction * q.StepMargin;
+            Float3 offset = goal - support;
+            float length = DistanceXZ(goal, support);
+            if (length > q.MaxReach)
+            {
+                goal = support + offset * (q.MaxReach / length);
+            }
+            BodyState left = SanitizeBody(bodies[(int)Role.FootLeft]);
+            BodyState right = SanitizeBody(bodies[(int)Role.FootRight]);
+            float nearLeft = DistanceXZ(capture, left.Position);
+            float nearRight = DistanceXZ(capture, right.Position);
+            int foot = nearLeft <= nearRight ? 0 : 1;
+            state.SwingFoot = foot;
+            state.SwingTime = 0f;
+            BodyState chosen = foot == 0 ? left : right;
+            state.SwingFrom = new Float3(chosen.Position.X, 0f, chosen.Position.Z);
+            state.SwingTo = new Float3(goal.X, 0f, goal.Z);
+        }
+
+        static bool SwingTargets(ReadOnlySpan<BodyState> bodies, BalanceParams q, ref BalanceState state, out Quaternion thigh, out Quaternion shin)
+        {
+            thigh = Quaternion.Identity;
+            shin = Quaternion.Identity;
+            if (!(state.SwingFoot == 0 || state.SwingFoot == 1))
+            {
+                return false;
+            }
+            float alpha = state.SwingTime / q.StepTime;
+            alpha = BalanceMath.Clamp(alpha, 0f, 1f);
+            Float3 top = state.SwingTo - state.SwingFrom;
+            Float3 path = state.SwingFrom + top * alpha;
+            float lift = (float)Math.Sin(alpha * Scalar.Pi) * q.StepHeight;
+            Float3 sole = new Float3(path.X, lift, path.Z);
+            Float3 ankleGoal = sole + new Float3(0f, q.StepAnkleHeight, 0f);
+            BodyState pelvis = SanitizeBody(bodies[(int)Role.Pelvis]);
+            int side = state.SwingFoot == 0 ? -1 : 1;
+            Float3 hip = BalanceMath.HipJoint(pelvis, side);
+            Float3 knee;
+            BalanceMath.SolveKnee(hip, ankleGoal, q.StepThighLength, q.StepShinLength, out knee);
+            thigh = BalanceMath.MapAxisY(hip - knee);
+            shin = BalanceMath.MapAxisY(knee - ankleGoal);
+            if (!thigh.IsValidRotation)
+            {
+                thigh = Quaternion.Identity;
+            }
+            if (!shin.IsValidRotation)
+            {
+                shin = Quaternion.Identity;
+            }
+            return true;
+        }
+
+        static Quaternion OverrideSwing(Quaternion target, Role role, int swingFoot, Quaternion thigh, Quaternion shin)
+        {
+            if (swingFoot == 0)
+            {
+                if (role == Role.ThighLeft)
+                {
+                    return thigh;
+                }
+                if (role == Role.ShinLeft)
+                {
+                    return shin;
+                }
+                return target;
+            }
+            if (swingFoot == 1)
+            {
+                if (role == Role.ThighRight)
+                {
+                    return thigh;
+                }
+                if (role == Role.ShinRight)
+                {
+                    return shin;
+                }
+                return target;
+            }
+            return target;
+        }
+
+        static void WriteFallTone(ReadOnlySpan<BodyState> bodies, BalanceParams q, Span<BodyDrive> drives, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                BodyState body = SanitizeBody(bodies[i]);
+                var drive = new BodyDrive();
+                drive.TargetWorld = body.Rotation;
+                drive.Stiffness = q.FallToneStiffness;
+                drive.Damping = q.FallToneDamping;
+                drive.MaxTorque = q.FallToneTorque;
+                drives[i] = drive;
+            }
+            for (int i = count; i < drives.Length; i++)
+            {
+                drives[i] = BodyDrive.Passive;
+            }
+        }
+
+        static void FinishTick(Float3 capture, ref BalanceState state)
+        {
+            if (state.Ticks < int.MaxValue)
+            {
+                state.Ticks++;
+            }
+            state.LastCapture = capture;
         }
 
         static float DistanceXZ(Float3 a, Float3 b)

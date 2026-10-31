@@ -18,6 +18,11 @@ support radius. Outer loops shift world-orientation targets: torso upright
 correction from lean plus lean rate, foot pitch from capture error, knee
 flex from pelvis height error, torso pitch from capture error, and torso
 plus half pelvis counter-roll from lateral capture error.
+When margin clears the step margin the nearer foot swings to capture plus
+margin plus velocity lead through two-bone leg inverse kinematics with a
+sine lift, replants at swing time, and repeats while margin stays high.
+Past fall reach the controller latches Falling, holds current orientations
+at low tone, and stops commanding steps.
 Inner gains copy the harness hold schedule.
 
 ## Parameters
@@ -51,10 +56,16 @@ Inner gains copy the harness hold schedule.
 | HipRollGain | 1 | Lateral capture error to torso counter-roll that rights side pushes |
 | HipRollVelGain | 0.2 | Lateral center velocity to counter-roll that damps side sway rate |
 | LeanMax | 0.3 | Caps capture lean target shift inside stable tilt |
-| StepMargin | 0.05 | Capture must clear support by this before a step starts |
+| StepMargin | 0.1 | Capture must clear support by this before a step, quiet at 60 N-s |
 | StepHeight | 0.1 | Swing foot clearance that steps over ground without tripping |
-| StepTime | 0.35 | Swing duration that lands inside one capture time constant |
-| MaxReach | 0.7 | Horizontal step limit inside 0.86 m leg reach with margin |
+| StepTime | 0.22 | Swing duration that lands ahead of a 2 m per s center |
+| StepAnkleHeight | 0.1 | Ankle height above the sole that targets the leg chain |
+| StepThighLength | 0.43 | Hip to knee length from bind joints that solves the leg chain |
+| StepShinLength | 0.43 | Knee to ankle length from bind joints that solves the leg chain |
+| StepLead | 0.5 | Center velocity times swing time added to the step goal |
+| MaxReach | 0.6 | Step goal clamp that stays inside leg reach with a crouch |
+| FallReach | 1.5 | Capture distance past which no step sequence can catch the center |
+| StanceBoost | 1.5 | Stance leg stiffness multiplier that carries single support |
 | FallToneStiffness | 8 | Falling latch low tone that goes limp without snapping |
 | FallToneDamping | 0.8 | Falling latch damping that avoids oscillation at low tone |
 | FallToneTorque | 20 | Falling latch torque cap that stays soft on the ground |
