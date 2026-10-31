@@ -65,6 +65,8 @@ Status: R10, H2, N12, N13, T1 and D1 are merged into main (green). R2 passed non
 | T1 | Totality fuzz of every controller entry point | R1, R3 to R8 (merged) | `tests/.../Totality/` |
 | D1 | Documentation refresh | none | `README.md`, `docs/index.md`, `docs/architecture.md` |
 | R2b | Repair the balance tick until the stand check passes (R2 is on `integrate/r2`, red on purpose) | R2 on `integrate/r2` | `BalanceTick/`, `Balance/`, `docs/contract.md` |
+| R2c | Continue the balance tick repair from `packet/R2b` (stop after E35) | R2b branch | `BalanceTick/`, `Balance/` |
+| B1 | Independent capture-point balance controller (MIT), staged, racing the port | H1, H2 merged | `src/SA.Balance/` |
 | R9 | Assemble one reaction controller and tune it | R2b green, R10, H2 merged | `Controller/` |
 
 ## Wave 3: still blocked
