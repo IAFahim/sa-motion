@@ -22,10 +22,18 @@ namespace SA.ReactionControl.Balance
             var point = BalanceMath.Sanitize(predicted);
             var leftPosition = BalanceMath.Sanitize(leftFoot.Position);
             var rightPosition = BalanceMath.Sanitize(rightFoot.Position);
-            var leftSide = BalanceMath.AxisX(leftFoot);
-            var leftForward = BalanceMath.AxisZ(leftFoot);
-            var rightSide = BalanceMath.AxisX(rightFoot);
-            var rightForward = BalanceMath.AxisZ(rightFoot);
+            var leftSide = BalanceMath.NormalizeOrZero(BalanceMath.Horizontal(BalanceMath.AxisX(leftFoot), up), 1e-6f);
+            if (!(leftSide.Length > 1e-6f))
+                leftSide = new Float3(1f, 0f, 0f);
+            var leftForward = BalanceMath.NormalizeOrZero(BalanceMath.Horizontal(BalanceMath.AxisY(leftFoot), up), 1e-6f);
+            if (!(leftForward.Length > 1e-6f))
+                leftForward = new Float3(0f, 0f, 1f);
+            var rightSide = BalanceMath.NormalizeOrZero(BalanceMath.Horizontal(BalanceMath.AxisX(rightFoot), up), 1e-6f);
+            if (!(rightSide.Length > 1e-6f))
+                rightSide = new Float3(1f, 0f, 0f);
+            var rightForward = BalanceMath.NormalizeOrZero(BalanceMath.Horizontal(BalanceMath.AxisY(rightFoot), up), 1e-6f);
+            if (!(rightForward.Length > 1e-6f))
+                rightForward = new Float3(0f, 0f, 1f);
             var c0 = leftPosition - leftForward * halfLength - leftSide * halfWidth;
             var c1 = rightPosition - rightForward * halfLength + rightSide * halfWidth;
             var c2 = rightPosition + rightForward * halfLength + rightSide * halfWidth;

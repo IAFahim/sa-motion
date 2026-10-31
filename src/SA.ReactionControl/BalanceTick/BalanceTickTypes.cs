@@ -21,6 +21,7 @@ namespace SA.ReactionControl.BalanceTick
         public BalancePelvisState Pelvis;
         public Float3 PlantLeft;
         public Float3 PlantRight;
+        public float AnkleClearance;
         public bool FallingLatched;
         public bool Seeded;
         public float LastComHeight;

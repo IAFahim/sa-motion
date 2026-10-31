@@ -68,7 +68,7 @@ namespace SA.ReactionControl.Balance
             SolveAnkle(p, up, targetLeft, normalLeft, anklePitch + lean, yawLeft * 0.5f, f.LeftPlanted, p.AnkleStrength, p.AnkleDamping, ref s, true);
             SolveAnkle(p, up, targetRight, normalRight, anklePitch - lean, yawRight * -0.5f, f.RightPlanted, p.AnkleStrength, p.AnkleDamping, ref s, false);
             RedistributeOverTravel(ref s);
-            WriteDrives(p, s, drives);
+            WriteDrives(p, s, f, up, drives);
         }
 
         static float Drop(Float3 foot, Float3 centre, Float3 up, float pelvisHeight, in BalanceParams p)
@@ -107,6 +107,9 @@ namespace SA.ReactionControl.Balance
         {
             var leg = left ? s.Left : s.Right;
             var goal = BalanceMath.Sanitize(target);
+            var clearance = Scalar.IsFinite(p.AnkleClearance) && p.AnkleClearance > 0f ? p.AnkleClearance : 0f;
+            if (clearance > 0f)
+                goal = goal + up * clearance;
             var lead = swing ? p.SwingLeadGain : 0f;
             if (lead > 0f && Scalar.IsFinite(lead))
                 goal = LeadTarget(goal, lead, hipStrength, hipDamping, p.MinLeadDistance, leg.Hip, s.Pelvis, s.Velocity);
@@ -114,7 +117,7 @@ namespace SA.ReactionControl.Balance
             var blend = 0f;
             if (swing)
             {
-                var footPos = leg.Foot.Frame.Position;
+                var footPos = leg.Ankle.Frame.Position;
                 var distance = BalanceMath.Sanitize(goal) - footPos;
                 var ratio = 0f;
                 if (hipStrength > 1e-6f && Scalar.IsFinite(hipStrength) && Scalar.IsFinite(hipDamping) && hipDamping >= 0f)
@@ -145,7 +148,7 @@ namespace SA.ReactionControl.Balance
             }
             var limbC = BalanceMath.AxisZ(leg.Limb);
             var limbD = leg.Limb.Position;
-            var childLocal = BalanceMath.ToLocal(leg.Knee.ChildFrame, leg.Foot.Frame.Position - leg.Knee.ChildFrame.Position);
+            var childLocal = BalanceMath.ToLocal(leg.Knee.ChildFrame, leg.Ankle.Frame.Position - leg.Knee.ChildFrame.Position);
             var kneeVector = BalanceMath.ToWorld(leg.Limb, childLocal);
             var thighLength = leg.ThighLength;
             if (!(thighLength > 1e-6f))
@@ -299,7 +302,7 @@ namespace SA.ReactionControl.Balance
                 var footSide = BalanceMath.AxisX(leg.Foot.Frame);
                 var toe = Float3.Dot(cleanNormal, BalanceMath.NormalizeOrZero(Float3.Cross(footSide, up), 1e-6f)) * p.ToeAlignGain
                     + align * p.ShinAlignGain;
-                var forward = BalanceMath.AxisZ(s.Root);
+                var forward = BalanceMath.AxisY(s.Root);
                 if (Float3.Dot(BalanceMath.Sanitize(leg.Foot.Velocity), forward) < 0f)
                     toe -= p.AnkleBackstepBias;
                 flex = toe + p.AnkleSwingOffset;
@@ -406,16 +409,30 @@ namespace SA.ReactionControl.Balance
             s.Spine = spine;
         }
 
-        static void WriteDrives(in BalanceParams p, in BalanceSnapshot s, Span<JointDrive> drives)
+        static void WriteDrives(in BalanceParams p, in BalanceSnapshot s, in BalanceFeet f, Float3 up, Span<JointDrive> drives)
         {
             var ceiling = Scalar.IsFinite(p.MaxTorque) && p.MaxTorque > 0f ? p.MaxTorque : 0f;
-            WriteLegDrives(p, s.Left, 1f, Role.ThighLeft, Role.ShinLeft, Role.FootLeft, ceiling, drives);
-            WriteLegDrives(p, s.Right, -1f, Role.ThighRight, Role.ShinRight, Role.FootRight, ceiling, drives);
+            WriteLegDrives(p, s.Left, 1f, Role.ThighLeft, Role.ShinLeft, Role.FootLeft, ceiling, f.LeftPlanted, up, drives);
+            WriteLegDrives(p, s.Right, -1f, Role.ThighRight, Role.ShinRight, Role.FootRight, ceiling, f.RightPlanted, up, drives);
             var spineLean = Scalar.IsFinite(s.Spine.Desired.Y) ? s.Spine.Desired.Y : 0f;
             var spineTarget = Quaternion.Multiply(
                 BalanceMath.SanitizeRotation(s.Spine.Frame.Rotation),
                 Quaternion.AxisAngle(new Float3(0f, 0f, 1f), spineLean));
             drives[(int)Role.Torso] = MakeDrive(spineTarget, p.SpineStrength, p.SpineDamping, ceiling);
+        }
+
+        static Quaternion FlatAnchor(Float3 up, Frame foot)
+        {
+            var rotation = BalanceMath.SanitizeRotation(foot.Rotation);
+            var axis = BalanceMath.Sanitize(up);
+            if (!(axis.Length > 1e-6f))
+                return rotation;
+            var sole = Quaternion.Rotate(rotation, new Float3(0f, 0f, 1f));
+            var anchor = BalanceMath.Arc(sole, axis * -1f, 1e-6f);
+            var flat = Quaternion.Normalize(Quaternion.Multiply(anchor, rotation));
+            if (!flat.IsValidRotation)
+                return rotation;
+            return flat;
         }
 
         static void WriteLegDrives(
@@ -426,6 +443,8 @@ namespace SA.ReactionControl.Balance
             Role kneeRole,
             Role ankleRole,
             float ceiling,
+            bool planted,
+            Float3 up,
             Span<JointDrive> drives)
         {
             var clean = side >= 0f ? 1f : -1f;
@@ -453,8 +472,9 @@ namespace SA.ReactionControl.Balance
             var desiredAnkle = Quaternion.Multiply(
                 Quaternion.AxisAngle(new Float3(1f, 0f, 0f), desiredPitch),
                 Quaternion.AxisAngle(new Float3(0f, 1f, 0f), desiredYaw));
+            var anchor = planted ? FlatAnchor(up, leg.Ankle.Frame) : BalanceMath.SanitizeRotation(leg.Ankle.Frame.Rotation);
             var ankleTarget = Quaternion.Multiply(
-                BalanceMath.SanitizeRotation(leg.Ankle.Frame.Rotation),
+                anchor,
                 Quaternion.Multiply(desiredAnkle, Frames.Relative(leg.Ankle.Frame, leg.Foot.Frame).Rotation));
             drives[(int)ankleRole] = MakeDrive(ankleTarget, p.AnkleStrength, p.AnkleDamping, ceiling);
         }

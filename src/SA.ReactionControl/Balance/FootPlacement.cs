@@ -155,8 +155,9 @@ namespace SA.ReactionControl.Balance
                 return;
             var leftContact = s.SupportLeft.Contact;
             var rightContact = s.SupportRight.Contact;
-            var leftFarther = f.DistLeft > f.DistRight;
-            var rightFarther = f.DistRight > f.DistLeft;
+            var free = !f.InsideSupport;
+            var leftFarther = f.DistLeft > f.DistRight && free;
+            var rightFarther = f.DistRight > f.DistLeft && free;
             bool wantLeft;
             bool wantRight;
             if (rightContact)
@@ -228,7 +229,7 @@ namespace SA.ReactionControl.Balance
             var stance = BalanceMath.Horizontal(right - left, up).Length;
             if (f.InsideSupport && stance > p.FootWidth + p.WideStanceRelease)
                 f.InsideSupport = false;
-            var rootForward = BalanceMath.AxisZ(s.Root);
+            var rootForward = BalanceMath.AxisY(s.Root);
             var rootSide = BalanceMath.AxisX(s.Root);
             var toRight = BalanceMath.NormalizeOrZero(BalanceMath.Horizontal(predicted - right, up), 1e-6f);
             var awayRight = rootForward * Float3.Dot(rootForward, toRight) * Float3.Dot(rootSide, toRight);
@@ -269,7 +270,7 @@ namespace SA.ReactionControl.Balance
             var fromStart = BalanceMath.Horizontal(f.Start - footWorld, up).Length;
             var span = fromStart + p.Epsilon;
             var spanFraction = (!(span > 1e-9f) || !Scalar.IsFinite(toTarget)) ? 0f : toTarget / span;
-            var sole = footWorld - BalanceMath.AxisZ(leg.Foot.Frame) * p.SoleOffset * 0.5f;
+            var sole = footWorld - BalanceMath.AxisY(leg.Foot.Frame) * p.SoleOffset * 0.5f;
             var passed = BalanceMath.Horizontal(sole - f.PrevTarget, up).Length
                 > BalanceMath.Horizontal(f.PrevSole - target, up).Length;
             var closingTerm = closing < 0f ? closing : 0f;
@@ -289,8 +290,8 @@ namespace SA.ReactionControl.Balance
             HipLeans(leg.Hip, lifted, side, out var use1, out var use2);
             HipLeans(leg.Hip, f.Start, side, out var from1, out var from2);
             var normal = steppingRight ? s.SupportRight.Normal : s.SupportLeft.Normal;
-            var spin = Float3.Cross(leg.Foot.AngularVelocity, BalanceMath.AxisZ(leg.Foot.Frame)) * p.ToeSpinFactor
-                + BalanceMath.AxisZ(leg.Foot.Frame);
+            var spin = Float3.Cross(leg.Foot.AngularVelocity, BalanceMath.AxisY(leg.Foot.Frame)) * p.ToeSpinFactor
+                + BalanceMath.AxisY(leg.Foot.Frame);
             var tilt = p.ReachForwardScale / (Float3.Dot(normal, up) + 0.5f);
             if (!Scalar.IsFinite(tilt))
                 tilt = 1f;

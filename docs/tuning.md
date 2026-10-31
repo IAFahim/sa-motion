@@ -189,3 +189,6 @@ Zero is a problem only where the Range uses an open lower bound; everywhere else
 Date | Scenario | Area.Field | Before | After | Measured effect | Who
 ---|---|---|---|---|---|---|
 2026-10-31 | none | none | none | none | none | R10 (example: log a row here for every Standard change) |
+2026-10-31 | StandTenSeconds | Balance.PelvisHeight | 0.95 | 1.0 | fall 38 -> 62 ticks (0.95 crouches 39 deg from 1.00 start) | R2b
+2026-10-31 | StandTenSeconds | Balance.SupportInsideMargin | -0.18 | 0.0 | gate functional with horizontal quad; 62 -> 62 alone, steps gated from t15 to t55 | R2b
+2026-10-31 | StandTenSeconds | Balance.AnkleClearance | n/a (new) | 0.0 | runtime-seeded 0.10 by tick; sole-space goals reach ankle | R2b

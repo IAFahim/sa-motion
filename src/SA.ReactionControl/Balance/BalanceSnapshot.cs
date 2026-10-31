@@ -97,9 +97,14 @@ namespace SA.ReactionControl.Balance
             var shinDirection = BalanceMath.NormalizeOrZero(anklePosition - kneePosition, 1e-6f);
             if (!(shinDirection.Length > 0f))
                 shinDirection = new Float3(0f, -1f, 0f);
-            var hipFrame = new Frame(thighPosition, BalanceMath.Arc(new Float3(0f, 0f, 1f), thighDirection, 1e-6f));
-            var kneeFrame = new Frame(kneePosition, BalanceMath.Arc(new Float3(0f, 0f, 1f), shinDirection, 1e-6f));
-            var ankleFrame = new Frame(anklePosition, BalanceMath.SanitizeRotation(foot.Rotation));
+            var halfSegment = (thighPosition - kneePosition) * 0.5f;
+            var hipJoint = thighPosition + halfSegment;
+            var kneeJoint = (thighPosition + kneePosition) * 0.5f;
+            var ankleJoint = kneePosition - halfSegment;
+            var hipFrame = new Frame(hipJoint, BalanceMath.Arc(new Float3(0f, 0f, 1f), thighDirection, 1e-6f));
+            var kneeFrame = new Frame(kneeJoint, BalanceMath.Arc(new Float3(0f, 0f, 1f), shinDirection, 1e-6f));
+            var ankleFrame = new Frame(ankleJoint, BalanceMath.SanitizeRotation(foot.Rotation));
+            var footFrame = new Frame(anklePosition, BalanceMath.SanitizeRotation(foot.Rotation));
             var thighFrame = new Frame(thighPosition, BalanceMath.SanitizeRotation(thigh.Rotation));
             var shinFrame = new Frame(kneePosition, BalanceMath.SanitizeRotation(shin.Rotation));
             var limb = Frames.Relative(hipFrame, kneeFrame);
@@ -152,13 +157,13 @@ namespace SA.ReactionControl.Balance
                 },
                 Foot = new BalancePart
                 {
-                    Frame = ankleFrame,
+                    Frame = footFrame,
                     Velocity = BalanceMath.Sanitize(foot.LinearVelocity),
                     AngularVelocity = BalanceMath.Sanitize(foot.AngularVelocity)
                 },
                 Limb = limb,
-                ThighLength = BalanceMath.SegmentLength(thighPosition, kneePosition),
-                ShinLength = BalanceMath.SegmentLength(kneePosition, anklePosition)
+                ThighLength = BalanceMath.SegmentLength(hipJoint, kneeJoint),
+                ShinLength = BalanceMath.SegmentLength(kneeJoint, ankleJoint)
             };
             return leg;
         }

@@ -38,6 +38,7 @@ namespace SA.ReactionControl.Balance
         public float Epsilon;
         public float LiftGain;
         public float SoleOffset;
+        public float AnkleClearance;
         public float AnkleBackstepBias;
         public float AirborneLift;
         public float YawPredictHorizon;
@@ -107,14 +108,14 @@ namespace SA.ReactionControl.Balance
             Up = new Float3(0f, 1f, 0f),
             GravityUp = new Float3(0f, 1f, 0f),
             DeltaTime = 0.0167f,
-            PelvisHeight = 0.95f,
+            PelvisHeight = 1.0f,
             LegLength = 1.0f,
             HipSpread = 0.11f,
             FootWidth = 0.22f,
             StepOffset = 0.05f,
             StepLead = 0.2f,
             SwingLeadGain = 0.1f,
-            SupportInsideMargin = -0.18f,
+            SupportInsideMargin = 0.0f,
             WideStanceRelease = 0.05f,
             MinLeadDistance = 0.07f,
             YawHalfSpan = 0.15f,
@@ -135,6 +136,7 @@ namespace SA.ReactionControl.Balance
             Epsilon = 1e-6f,
             LiftGain = 0.2f,
             SoleOffset = 0.06f,
+            AnkleClearance = 0.0f,
             AnkleBackstepBias = 0.05f,
             AirborneLift = 0.02f,
             YawPredictHorizon = 0.06f,

@@ -22,7 +22,6 @@ namespace SA.ReactionControl.BalanceTick
         public const float ServoMaxTorque = 500f;
         public const float PelvisDamping = 30f;
         public const float StepDeadband = 0.09f;
-        public const float ProbePointLift = 0.05f;
         public const float MaxHeightCorrection = 0.1f;
         public const float TaperBendReference = 0.2f;
         public const float TaperRate = 2.0f;
@@ -89,8 +88,8 @@ namespace SA.ReactionControl.BalanceTick
             var up = BalanceMath.SanitizeUnit(parameters.Up, new Float3(0f, 1f, 0f));
             var leftProbe = feet[0];
             var rightProbe = feet[1];
-            leftProbe.Point = BalanceMath.Sanitize(leftProbe.Point) + up * ProbePointLift;
-            rightProbe.Point = BalanceMath.Sanitize(rightProbe.Point) + up * ProbePointLift;
+            leftProbe.Point = BalanceMath.Sanitize(leftProbe.Point);
+            rightProbe.Point = BalanceMath.Sanitize(rightProbe.Point);
             var snapshot = default(BalanceSnapshot);
             if (!SnapshotBuilder.TryBuild(tick, bodies, leftProbe, rightProbe, ref snapshot))
             {
@@ -119,8 +118,10 @@ namespace SA.ReactionControl.BalanceTick
             {
                 state.Pelvis.Centre = (BalanceMath.Sanitize(snapshot.Left.Foot.Frame.Position) + BalanceMath.Sanitize(snapshot.Right.Foot.Frame.Position)) * 0.5f;
                 state.Pelvis.BlendVelocity = snapshot.HorizontalVelocity;
+                state.AnkleClearance = SeedClearance(snapshot, leftProbe, rightProbe, up);
                 state.Seeded = true;
             }
+            tick.AnkleClearance = Scalar.IsFinite(state.AnkleClearance) && state.AnkleClearance > 0f ? state.AnkleClearance : 0f;
             state.Pelvis.Centre = state.Feet.Centre;
             if (state.Pelvis.FixedVelocity)
                 state.Pelvis.BlendVelocity = BalanceMath.Sanitize(state.Pelvis.BlendVelocity);
@@ -157,7 +158,7 @@ namespace SA.ReactionControl.BalanceTick
             var leftY = Float3.Dot(state.Feet.FootLeft, up);
             var rightY = Float3.Dot(state.Feet.FootRight, up);
             var lowY = leftY < rightY ? leftY : rightY;
-            var correction = (pelvisY - lowY) - (tick.PelvisHeight + ProbePointLift);
+            var correction = (pelvisY - lowY) - tick.PelvisHeight;
             if (!Scalar.IsFinite(correction))
                 correction = 0f;
             if (correction > MaxHeightCorrection)
@@ -276,6 +277,7 @@ namespace SA.ReactionControl.BalanceTick
             };
         }
 
+
         static void ScaleKnee(in BalanceLeg leg, Role kneeRole, Span<JointDrive> drives)
         {
             var actual = Scalar.IsFinite(leg.Knee.Actual) ? leg.Knee.Actual : 0f;
@@ -327,6 +329,18 @@ namespace SA.ReactionControl.BalanceTick
                     return false;
             }
             return true;
+        }
+
+        static float SeedClearance(in BalanceSnapshot snapshot, SupportProbe left, SupportProbe right, Float3 up)
+        {
+            var ankle = (BalanceMath.Sanitize(snapshot.Left.Ankle.Frame.Position) + BalanceMath.Sanitize(snapshot.Right.Ankle.Frame.Position)) * 0.5f;
+            var ground = (BalanceMath.Sanitize(left.Point) + BalanceMath.Sanitize(right.Point)) * 0.5f;
+            var clearance = Float3.Dot(ankle - ground, BalanceMath.SanitizeUnit(up, new Float3(0f, 1f, 0f)));
+            if (!Scalar.IsFinite(clearance) || clearance < 0f)
+                return 0f;
+            if (clearance > 0.5f)
+                return 0.5f;
+            return clearance;
         }
 
         static float GuardStep(float step)
