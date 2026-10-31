@@ -51,6 +51,19 @@ Pure .NET, start all at once. Shared rules: `docs/packets/R-common.md`. The shar
 
 Second wave, after R1 and H1 merge: R2 (`nmdbm.rs` 843-1474, body adapter and tick), R9 (assemble all areas into one controller tick and tune it in H1), R10 (independent parameter profile and tuning log).
 
+## Wave R2: next agents (start the first seven now)
+
+| ID | Task | Needs | Owns |
+|---|---|---|---|
+| R2 | Balance controller tick on top of R1, measured in the harness | R1, H1 (merged) | `BalanceTick/` |
+| R10 | Independent profile, validation and tuning log | R1, R3 to R8 (merged) | `Profile/`, `docs/tuning.md` |
+| H2 | Harness push scenarios and outcome metrics | H1 (merged) | `tests/SA.Harness/Scenarios/` |
+| N12 | Hinge axis and range inference | none (MIT) | `SA.Humanoid/Hinge/` |
+| N13 | Soft joint limits as a corrective drive | none (MIT) | `SA.Motion/Mechanics/SoftLimits.cs` |
+| T1 | Totality fuzz of every controller entry point | R1, R3 to R8 (merged) | `tests/.../Totality/` |
+| D1 | Documentation refresh | none | `README.md`, `docs/index.md`, `docs/architecture.md` |
+| R9 | Assemble one reaction controller and tune it | R2, R10, H2 merged | `Controller/` |
+
 ## Wave 3: still blocked
 
 | ID | Task | Blocked by |
