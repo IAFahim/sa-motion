@@ -6,7 +6,7 @@ Why this order: a .NET test run takes seconds and needs no Editor, so any number
 
 Baseline (measured 2026-10-31): .NET 38 tests pass, Unity bridge 3 pass, SA package 35 pass. `PoseTransition.Apply` costs 43-47 ns at unit scale and 76-81 ns otherwise under Burst (`docs/verification.md`).
 
-## Wave 1: pure .NET, run in parallel
+## Wave 1: pure .NET, run in parallel (done 2026-10-31: all nine merged; 134 + 30 tests pass)
 
 Each packet has its own spec in `docs/packets/<ID>.md`. The spec is the whole task. `src/SA.Humanoid` and its test project already exist with the 15-role contract (`Roles.cs`), so N4 and N5 only add files.
 
@@ -26,7 +26,7 @@ Each packet has its own spec in `docs/packets/<ID>.md`. The spec is the whole ta
 
 | ID | Task | Needs | Done when |
 |---|---|---|---|
-| U1 | SA integration of inertialization (plan P3): `Transitions.cs`, opt-in `Playback` overloads, fixed-clock exclusion, CPU correction order. Existing APIs unchanged. | N1, N6 | SA suite 35/35 plus new tests. `CrossFade` regression green. Interrupted and repeated requests tested. |
+| U1 (done on branch `u1-inertialization` of com.sa.unity, not merged to main; baker path unverified) | SA integration of inertialization (plan P3): `Transitions.cs`, opt-in `Playback` overloads, fixed-clock exclusion, CPU correction order. Existing APIs unchanged. | N1, N6 | SA suite 35/35 plus new tests. `CrossFade` regression green. Interrupted and repeated requests tested. |
 | U2 | Reactions package skeleton and the two-body Gate M fixture (plan P1): real limit joint, world refit, observation, rendered response. | N2, N3 | Plan section 8.3 passes with numeric traces and a captured frame. |
 | U3 | Humanoid baker (plan P2): `RagdollBaker` consuming N4 and N5, unparented proxies, shared blobs. | N4, N5, U2 | One Avatar humanoid and one generic humanoid bake. Subscene reload and two instances work. |
 | U4 | GPU inertialization (plan P4): mirror the specified math in HLSL. | U1 | Real GPU parity against the C# kernel on the same inputs. |

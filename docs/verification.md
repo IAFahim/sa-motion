@@ -28,6 +28,17 @@ Source: `packages/com.sa.motion.unity/Samples~/CostProbe`; raw report: `docs/cos
 | Non-unit scale (log/exp path, worst case) | 114-124 ns | 76-81 ns |
 | Conversion `float3`/`quaternion` round trip vs. empty loop | n/a | 1.09-1.15 ns vs 1.10-1.15 ns |
 
+After packets N1 and N9 (finished-transition early-out and totality guards), three more runs on the same machine, DLL `1f55fef79f6a9351b1e9c39e1bb7747b2795c47257697533fc71ddbad87c8232`:
+
+| Per `PoseTransition.Apply` call | Managed | Burst |
+|---|---|---|
+| Unit scale, active transition | 96-97 ns | 46.2-47.0 ns |
+| Non-unit scale, active transition | 144-146 ns | 83.9-85.7 ns |
+| Finished transition (new dataset) | 15.8-16.9 ns | 12.9-13.2 ns |
+
+- A finished transition is about 3.5 times cheaper than an active unit-scale one. The finished figure before N1 was not measured; it was probably close to the active unit-scale cost, because the rotation sin/cos ran regardless.
+- The totality guards and early-out checks cost a little on active transitions: Burst non-unit scale went from 76-81 ns to 84-86 ns, unit scale stayed within noise (43-47 ns before, 46-47 ns after). The managed numbers moved more between sessions (74-79 ns before, 96-97 ns after at unit scale), so treat managed figures as indicative only.
+
 - Conversions are free at this resolution: the round trip is indistinguishable from the baseline loop.
 - The kernel's transcendental calls are the likely cost (inferred from the code, not isolated by profiling): double-precision `Math.Sin`/`Cos` in `Quaternion.AxisAngle`, plus three `Log` and three `Exp` when scale differs from 1. Native execution is proven by the sentinel; Burst gains only about 1.7x over managed here.
 - Order of magnitude: one active transition on a 50-bone character is about 2.2 us at unit scale. That is a per-transitioning-character estimate from this micro-batch, not a crowd result. `Apply` currently evaluates the rotation sin/cos even after the transition has finished; a caller-side or kernel-side early-out is untested.

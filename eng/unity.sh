@@ -11,11 +11,11 @@ if ! unity command --result-only console get --tail 1 >/dev/null 2>&1; then
 fi
 
 recompile() {
-  unity command --result-only script recompile >/dev/null 2>&1
+  unity command --result-only script recompile >/dev/null 2>&1 || true
   sleep 4
   local status
   for _ in $(seq 1 100); do
-    status=$(unity command --result-only script recompile_status 2>&1)
+    status=$(unity command --result-only script recompile_status 2>&1) || true
     grep -q '"status": "completed"' <<<"$status" && break
     sleep 3
   done
@@ -29,7 +29,7 @@ import json,sys
 d=json.load(sys.stdin)
 print(d["Summary"])
 failed=[r for r in d["Results"] if r["Status"]!="Passed"]
-for r in failed: print("FAIL", r["FullName"], "::", (r["Message"] or "")[:400].replace("\n"," "))
+for r in failed: print("FAIL", r["FullName"], "::", (r["Message"] or "")[:2500].replace("\n"," "))
 sys.exit(1 if failed or d["Summary"]["Total"]==0 else 0)'
 }
 
