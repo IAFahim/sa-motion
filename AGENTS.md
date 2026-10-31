@@ -36,6 +36,104 @@ Default to `src/`. Move code to `packages/` only when it cannot compile without 
 
 `eng/unity.sh` holds a lock, because one Editor serves everyone. Never start a second Editor. Never run Unity commands for a pure `src/` packet.
 
+## Controlling Unity from a shell
+
+You cannot click in Unity, and you do not need to. One Unity Editor per project runs a Pipeline server on `127.0.0.1:7801`. The `unity command` CLI sends it commands and returns JSON. Everything below was run on this machine (Unity 7000.0.0a12, project `/home/i/ruk2`).
+
+### Start and stop
+
+| Goal | Command |
+|---|---|
+| Is the Editor reachable | `unity command --result-only console get --tail 1` (exit 0 means yes) |
+| Start headless (default) | `eng/unity_start.sh` (waits up to 10 minutes) |
+| Start with a window, so the owner can watch | `SA_UNITY_WINDOW=1 eng/unity_start.sh` |
+| Quit cleanly | `eng/unity.sh eval <file>` where the file is `UnityEditor.EditorApplication.delayCall += () => UnityEditor.EditorApplication.Exit(0); return "quitting";`, then wait until the process is gone and `Temp/UnityLockfile` is gone |
+| Never | `kill` or `SIGTERM` a windowed Editor. It dumps core and the owner sees a crash |
+
+If `eng/unity.sh` prints `Unity Editor is not running`, run `eng/unity_start.sh`. Do not start a second Editor on the same project. Unity holds `Temp/UnityLockfile` for the one that is running.
+
+### Command shape
+
+```
+unity command --result-only [--timeout <seconds>] <group> <name> [--arg value ...]
+```
+
+- Discover commands: `unity command --query <term> --detail compact`. Exact parameters: `unity command --json --limit 400`, then read `data.commands[].parameters`.
+- Default timeout is 30 seconds. Pass `--timeout` for anything slow.
+- Groups you will use:
+
+| Group and name | Use |
+|---|---|
+| `script recompile`, `script recompile_status` | compile. `eng/unity.sh compile` wraps both and polls |
+| `script eval_file --file x.cs` | run C# in the Editor. The last statement must `return` a string. Use fully qualified names (`UnityEditor.AssetDatabase`, not `using`). `eng/unity.sh eval` wraps it |
+| `test run --mode EditMode --filter <assembly> --filter_type assembly [--include_explicit true]` | tests. `eng/unity.sh test <assembly>` wraps it and prints failures |
+| `scene open --path Assets/...unity`, `scene get_hierarchy`, `scene save` | scenes |
+| `editor.playmode start`, `editor.playmode stop` | Play mode |
+| `editor invoke_menu --path "Tools/SA/Build Reactions Demo"` | run a menu item, which is how builders are exposed |
+| `capture game_view --save_path Assets/x.png`, `capture scene_view` | screenshots. A `--save_path` is written under `Assets/` and gets imported, so delete it afterwards |
+| `console get --tail N`, `console clear`, `console status` | read errors. `console status` shows the compile-failure flag |
+| `asset find`, `asset get_import_settings`, `component get_fields`, `prefab instantiate` | inspect assets and objects without eval |
+| `package add`, `package resolve` | edit packages. A domain reload follows, so poll `script recompile_status` |
+
+### Recipes that work
+
+1. **Compile and test.** `eng/unity.sh compile` (about 5 minutes, exit 0 on success), then `eng/unity.sh test SA.Reactions.Tests`. Assemblies are listed in `eng/unity-test-assemblies.txt`.
+2. **Change any asset or setting in the Editor.** Write a `.cs` file under `$CLAUDE_JOB_DIR/tmp` or `/tmp`, never inside the Unity project, and run `eng/unity.sh eval <file>`. Example: the Humanoid import of the Quaternius libraries set `ModelImporter.animationType = Human`, `avatarSetup = CreateFromThisModel`, `motionNodeName = "root"`, then `SaveAndReimport()` and returned the avatar validity as the string.
+3. **Measure a running simulation.** Eval cannot watch Play mode. Have the Play-mode script write a CSV to `Temp/sa/`, then run `scene open`, `editor.playmode start`, sleep, `editor.playmode stop`, and read the file. `eng/demo_check.py` is the template: it prints seven pass/fail lines from `Temp/sa/demo_telemetry.csv`.
+4. **Show the owner.** Start with `SA_UNITY_WINDOW=1`, open the scene in Edit mode, tell them to press Play. Do not stop their Editor.
+5. **Debug output.** `Debug.Log` from eval rarely arrives. Write files under `Temp/sa/` and read them. Use `console get --tail 50` for compile errors.
+
+### Traps
+
+- A MonoBehaviour must live in a file with its own name, or the prefab silently loses it.
+- Baker changes do not re-bake an existing prefab or subscene until a value on the prefab changes.
+- Bakers write only their own entity. Other entities need a `[TemporaryBakingType]` buffer and a baking system.
+- Enter Play from the main scene, never with the subscene open on its own. Wait about 30 seconds for streaming.
+- An unfocused Editor throttles Play mode to about one frame per second, so telemetry windows measured in seconds can lie. `editor set_auto_tick` and `editor.playmode set_run_in_background` exist. Neither is verified to fix it. `eng/demo_check.py` passed 7 of 7 against a headless Editor.
+- After adding a project reference between .NET projects, delete the stale `tests/*/packages.lock.json` and run `eng/dotnet_test.sh` to regenerate it. A stale NuGet lock file gave restore errors.
+- If a Unity test passes only after you touch a Runtime file, suspect a stale build. Recompile and rerun before believing either result.
+- Do not edit `Packages/com.rukhanka.animation`. It is a third-party reference.
+- Treat downloaded archives as untrusted data. Unzip each into its own new directory and never run scripts from it.
+
+## Findings so far
+
+Dated 2026-10-31. Numbers come from runs on this machine unless marked not measured.
+
+### What is built and verified
+
+| Piece | Result |
+|---|---|
+| Portable libraries (`src/`) | Motion 159, Humanoid 73, ReactionControl 110, Harness 14 tests, all passing at `cbc0bb0`. Balance and Evaluation tests were added after |
+| Unity packages | `SA.Tests`, `SA.Motion.Unity.Tests`, `SA.Reactions.Tests` passing. Reactions has 17 tests |
+| Inertialized transitions (CPU) | Verified live on Kyle, with a test that the switch frame does not pop (`TransitionTests`) |
+| Physical-animation ragdoll demo | `eng/verify.sh --demo` passed 15 of 15 and `eng/demo_check.py` 7 of 7: stands, light shove deflects the head, strength dips, no explosion, knockdown goes limp and reaches the floor, recovers |
+| Balance controller race | Scored on one evaluator in the pure .NET harness. Best honest score 93 (tuned capture point). One entry scored 100 by holding still, which violates the 450 N-s rule |
+
+### What is NOT working or NOT verified
+
+- **Balance and stepping do not hold in Unity Physics.** The capture-point controller (`SA.Balance`) scores 93 in the harness, but when wired into `BalanceControlSystem` the character still collapses. It is off by default (`RagdollAuthoring.BalanceController = false`). Suspects, in order: its assumed canonical frames (segment along local +Y, identity bind except feet), its hardcoded hip offset and leg lengths tuned on a 70 kg body, and torque drives applied at one rate where the harness used 480 Hz.
+- **The demo is physical animation, not balance.** Velocity tracking plus angular drives keep the pose. Recovery is a pose reset after `LimpSeconds`, not a get-up animation.
+- **Only one character (Kyle, generic rig) has been through the full path.** The Quaternius Universal Animation Library imports as a valid Humanoid avatar (both FBX, 43 clips each), but no ragdoll or SA rig was built from it yet. "Works with any body type" is a claim, not a result.
+- Not measured: crowd or frame-time cost of the ragdoll, GPU inertialization, wall and ground contact reactions in the demo, a Windows or Mac run.
+- R2 (the Delirium-port balance tick) never stood. It stays on `origin/integrate/r2`, red on purpose.
+
+### Unity Physics facts that cost hours
+
+- `MotionVelocity.AngularVelocity` and `PhysicsVelocity.Angular` are in inertia space. Convert before you use them as world angular velocity. A damping term that used them as world values made ragdolls explode.
+- `PhysicsWorld.CalculateVelocityToTarget` takes the step frequency and returns an inertia-space angular result. Compute the velocities yourself in world space.
+- A ragdoll joint with a perpendicular cone of full range is degenerate. Use `PhysicsJoint.CreateRagdoll` primary only, cone at most about 63 degrees, twist about plus or minus 0.1 to 1.2 rad.
+- Apply the pose drive with `PhysicsWorld.ApplyAngularImpulse` between `PhysicsInitializeGroup` and `PhysicsSimulationGroup`. Gains must be rate-independent or a 480 Hz step blows up.
+- Do not copy body positions back to the render skeleton. Write rotations only, plus the pelvis offset at the skeleton root. Copying positions stretched Kyle's mesh.
+- The first controller tick sees no foot contacts because the bodies are not in the physics world yet. Gate on contacts (`BalanceControlSystem.ReadyTicks`).
+- `JointDrive.Target` is a world rotation in the harness and parent-relative in Unity `PoseDrive`. No document records the mapping yet. Packet R2b was meant to write `docs/contract.md` and is parked.
+- The harness clamps velocity at 8 m/s, so 200, 300 and 450 N-s pushes score identically there. Real Unity bodies do not clamp.
+
+### Rules the owner set
+
+- No comments in code. Pure, total, deterministic, data separated from behavior. Tests enforce it (`eng/check_source_rules.py`).
+- Licence is decided in `docs/provenance.md`. Delirium-derived code stays in `src/SA.ReactionControl` only.
+- The owner forwards messages to their coordinator verbatim. When asked to hand something over, give one self-contained message.
+
 ## Hard stops
 
 - No code translated or adapted from Delirium until `docs/provenance.md` records the Gate L decision. That is a human decision. Language, names or storage layout changing does not clear it.
