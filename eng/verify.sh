@@ -23,6 +23,7 @@ done
 
 if [ "$unity" = 1 ]; then
   step bridge-pack python3 eng/pack_bridge.py
+  step humanoid-pack python3 eng/pack_humanoid.py
   step bridge-artifact-consistent python3 eng/check_artifact.py
   step unity-start eng/unity_start.sh
   step unity-compile eng/unity.sh compile

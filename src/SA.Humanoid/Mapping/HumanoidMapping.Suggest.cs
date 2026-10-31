@@ -124,12 +124,12 @@ namespace SA.Humanoid.Mapping
 
         private static bool IsPelvisCore(string core)
         {
-            return core.Contains("pelvis") || core.Contains("hips");
+            return core.Contains("pelvis") || core.Contains("hips") || core == "hip";
         }
 
         private static bool IsSpineCore(string core)
         {
-            return core.Contains("spine") || core.Contains("chest") || core.Contains("torso");
+            return core.Contains("spine") || core.Contains("chest") || core.Contains("torso") || core.Contains("ribs");
         }
 
         private static bool IsHeadCore(string core)
@@ -154,7 +154,7 @@ namespace SA.Humanoid.Mapping
 
         private static bool IsHandCore(string core)
         {
-            return core.Contains("hand");
+            return core.Contains("hand") || core.Contains("wrist");
         }
 
         private static bool IsThighCore(string core)
@@ -164,7 +164,7 @@ namespace SA.Humanoid.Mapping
 
         private static bool IsShinCore(string core)
         {
-            if (core.Contains("shin") || core.Contains("calf") || core.Contains("lowerleg"))
+            if (core.Contains("shin") || core.Contains("calf") || core.Contains("lowerleg") || core.Contains("knee"))
             {
                 return true;
             }
@@ -177,7 +177,7 @@ namespace SA.Humanoid.Mapping
 
         private static bool IsFootCore(string core)
         {
-            return core.Contains("foot");
+            return core.Contains("foot") || core.Contains("ankle");
         }
 
         private static bool CoreMatches(Role role, string core)

@@ -36,12 +36,13 @@ namespace SA.Reactions
                 var orientation = World.Bodies[index].WorldFromBody.rot;
                 if (index >= World.NumDynamicBodies)
                     return DriveBody.Static(orientation);
+                var inertiaOrientation = World.MotionDatas[index].WorldFromMotion.rot;
                 return new DriveBody
                 {
                     Orientation = orientation,
-                    InertiaOrientation = World.MotionDatas[index].WorldFromMotion.rot,
+                    InertiaOrientation = inertiaOrientation,
                     InverseInertia = World.MotionVelocities[index].InverseInertia,
-                    AngularVelocity = World.MotionVelocities[index].AngularVelocity
+                    AngularVelocity = math.rotate(inertiaOrientation, World.MotionVelocities[index].AngularVelocity)
                 };
             }
 

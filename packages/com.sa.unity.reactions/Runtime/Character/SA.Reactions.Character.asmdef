@@ -1,0 +1,24 @@
+{
+  "name": "SA.Reactions.Character",
+  "rootNamespace": "SA.Reactions",
+  "references": [
+    "SA.Reactions",
+    "SA.Runtime",
+    "SA.Motion.Unity",
+    "Unity.Burst",
+    "Unity.Collections",
+    "Unity.Entities",
+    "Unity.Mathematics",
+    "Unity.Physics",
+    "Unity.Transforms"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": true,
+  "overrideReferences": true,
+  "precompiledReferences": ["SA.Motion.dll", "SA.Humanoid.dll"],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

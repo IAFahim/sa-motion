@@ -1,0 +1,23 @@
+{
+  "name": "SA.Reactions.Editor",
+  "rootNamespace": "SA.Reactions.Editor",
+  "references": [
+    "SA.Reactions",
+    "SA.Reactions.Character",
+    "Unity.Collections",
+    "Unity.Entities",
+    "Unity.Entities.Hybrid",
+    "Unity.Mathematics",
+    "Unity.Physics",
+    "Unity.Transforms"
+  ],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": true,
+  "overrideReferences": true,
+  "precompiledReferences": ["SA.Motion.dll", "SA.Humanoid.dll"],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

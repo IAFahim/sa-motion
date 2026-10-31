@@ -111,10 +111,10 @@ namespace SA.Humanoid.Mapping
                     continue;
                 }
                 int b = copy[r];
-                int ancestor = copy[p];
-                if (!IsProperDescendant(skeleton, bones, b, ancestor))
+                int parentBone = copy[p];
+                if (b == parentBone || IsProperDescendant(skeleton, bones, parentBone, b))
                 {
-                    found.Add(new Diagnostic(DiagnosticCode.RoleNotBelowItsParentRole, role, b));
+                    found.Add(new Diagnostic(DiagnosticCode.RoleAboveItsParentRole, role, b));
                 }
             }
             Diagnostic[] all = found.ToArray();

@@ -26,7 +26,7 @@ namespace SA.Humanoid.Mapping
         ParentIndexOutOfRange = 2,
         ParentCycle = 3,
         MapIndexOutOfRange = 4,
-        RoleNotBelowItsParentRole = 5,
+        RoleAboveItsParentRole = 5,
         WrongMapLength = 6
     }
 

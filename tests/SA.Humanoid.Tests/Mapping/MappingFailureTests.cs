@@ -94,7 +94,7 @@ public class MappingFailureTests
         Assert.Equal(2, report.Diagnostics.Length);
         Assert.Equal(DiagnosticCode.BoneUsedByTwoRoles, report.Diagnostics[0].Code);
         Assert.Equal(Role.ForearmLeft, report.Diagnostics[0].Role);
-        Assert.Equal(DiagnosticCode.RoleNotBelowItsParentRole, report.Diagnostics[1].Code);
+        Assert.Equal(DiagnosticCode.RoleAboveItsParentRole, report.Diagnostics[1].Code);
         Assert.Equal(Role.ForearmLeft, report.Diagnostics[1].Role);
     }
 
@@ -133,14 +133,14 @@ public class MappingFailureTests
     }
 
     [Fact]
-    public void ForearmOutsideItsUpperArmSubtreeReportsRoleNotBelowItsParentRole()
+    public void ForearmMappedAboveItsUpperArmReportsRoleAboveItsParentRole()
     {
         SkeletonBone[] skeleton = Mixamo();
         int[] map = HumanoidMapping.Suggest(skeleton);
-        map[(int)Role.ForearmLeft] = 17;
+        map[(int)Role.ForearmLeft] = skeleton[map[(int)Role.UpperArmLeft]].Parent;
         MappingReport report = HumanoidMapping.Map(skeleton, map);
         Assert.False(report.IsValid);
-        Contains(report, DiagnosticCode.RoleNotBelowItsParentRole, Role.ForearmLeft);
+        Contains(report, DiagnosticCode.RoleAboveItsParentRole, Role.ForearmLeft);
         OrderedByRoleThenCode(report);
     }
 

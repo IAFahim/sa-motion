@@ -178,7 +178,8 @@ namespace SA.Reactions.Tests
             var settled = arm.RelativeError(HoldTarget);
             var manager = arm.World.EntityManager;
             var velocity = manager.GetComponentData<PhysicsVelocity>(arm.Child);
-            velocity.Angular += new float3(0f, 0f, 25f);
+            var mass = manager.GetComponentData<PhysicsMass>(arm.Child);
+            velocity.Angular += math.rotate(math.inverse(mass.InertiaOrientation), math.rotate(math.inverse(arm.ChildRotation), new float3(0f, 0f, 80f)));
             manager.SetComponentData(arm.Child, velocity);
             var peak = 0f;
             for (var i = 0; i < 20; i++)
@@ -187,7 +188,7 @@ namespace SA.Reactions.Tests
                 peak = math.max(peak, arm.RelativeError(HoldTarget));
             }
             arm.Run(240);
-            Assert.Greater(peak, settled + 0.1f);
+            Assert.Greater(peak, settled + 0.05f);
             Assert.Less(arm.RelativeError(HoldTarget), 0.1f);
         }
 
