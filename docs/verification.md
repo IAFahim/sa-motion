@@ -14,8 +14,26 @@ Environment: .NET SDK 10.0.401, netstandard2.1/C#9 library, .NET10 test/package-
 | Artifact/ABI | Packed and imported DLL SHA256 matched; assembly references only `netstandard`; POD size checks passed |
 | Existing SA regression suite | 35 passed, zero failed/skipped, before bridge integration |
 | Standalone player/native Burst | Passed on Linux CoreCLR with actual variable-input native job, measured loaded DLL hash and full numerical report; see player-verification.md |
-| Bounded kernel/conversion cost probe | Pending separately; no performance claim from correctness tests |
+| Bounded kernel/conversion cost probe | Passed with native sentinel 1 / managed control 0; three runs recorded in the cost section below |
 | Delirium-derived controller | Not implemented; source/data gates remain unresolved |
+
+Bounded cost probe
+------------------
+
+Source: `packages/com.sa.motion.unity/Samples~/CostProbe`; raw report: `docs/cost-result.json`. Unity 7000.0.0a12 Editor, Burst 2 function pointers, i9-14900K, single thread, warmed, median of 5 samples of 200,000 calls over 64 cases. Each figure includes the loop, input copy, modulo index, checksum and one function-pointer boundary. Three consecutive runs:
+
+| Per `PoseTransition.Apply` call | Managed | Burst |
+|---|---|---|
+| Unit scale (typical rigs) | 74-79 ns | 43-47 ns |
+| Non-unit scale (log/exp path, worst case) | 114-124 ns | 76-81 ns |
+| Conversion `float3`/`quaternion` round trip vs. empty loop | n/a | 1.09-1.15 ns vs 1.10-1.15 ns |
+
+- Conversions are free at this resolution: the round trip is indistinguishable from the baseline loop.
+- The kernel's transcendental calls are the likely cost (inferred from the code, not isolated by profiling): double-precision `Math.Sin`/`Cos` in `Quaternion.AxisAngle`, plus three `Log` and three `Exp` when scale differs from 1. Native execution is proven by the sentinel; Burst gains only about 1.7x over managed here.
+- Order of magnitude: one active transition on a 50-bone character is about 2.2 us at unit scale. That is a per-transitioning-character estimate from this micro-batch, not a crowd result. `Apply` currently evaluates the rotation sin/cos even after the transition has finished; a caller-side or kernel-side early-out is untested.
+- Not measured: GPU, crowd, memory bandwidth, multi-thread scaling, IL2CPP.
+
+The first attempt failed its own guard because Burst direct-call redirected the managed control to native code. The probe now calls a non-attributed twin for the managed control; the native-execution assertion is unchanged.
 
 Verified portable DLL SHA256:
 

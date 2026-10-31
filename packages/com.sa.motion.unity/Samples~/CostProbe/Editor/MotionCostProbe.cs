@@ -44,9 +44,12 @@ namespace SA.Motion.Unity.CostProbe
             public int NativeExecution;
             public int ManagedControl;
             public float KernelChecksum;
+            public float UnitScaleChecksum;
             public float ConversionChecksum;
             public double ManagedKernelNs;
             public double BurstKernelNs;
+            public double ManagedKernelUnitScaleNs;
+            public double BurstKernelUnitScaleNs;
             public double BurstConversionLoopNs;
             public double BurstBaselineLoopNs;
             public int Float3Bytes;
@@ -64,7 +67,9 @@ namespace SA.Motion.Unity.CostProbe
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Strict, FloatPrecision = FloatPrecision.High)]
         [AOT.MonoPInvokeCallback(typeof(Loop))]
-        public static void Kernel(Input* inputs, int count, int iterations, Result* result)
+        public static void Kernel(Input* inputs, int count, int iterations, Result* result) => KernelBody(inputs, count, iterations, result);
+
+        static void KernelBody(Input* inputs, int count, int iterations, Result* result)
         {
             var checksum = 0f;
             var native = 1;
@@ -129,41 +134,51 @@ namespace SA.Motion.Unity.CostProbe
             return times[times.Length / 2];
         }
 
-        public static string Run(string output)
+        static void Fill(NativeArray<Input> inputs, bool unitScale)
         {
-            const int count = 64;
-            const int iterations = 200000;
-            using var inputs = new NativeArray<Input>(count, Allocator.Temp);
-            for (var i = 0; i < count; i++)
+            for (var i = 0; i < inputs.Length; i++)
             {
                 var pose = Pose.Identity;
                 pose.Position = new Float3(i * 0.03f + 1f, i * -0.01f, 0.3f);
                 pose.Rotation = MotionQuaternion.AxisAngle(new Float3(0, 1, 0), i * 0.01f + 0.1f);
-                pose.Scale = new Float3(1f + i * 0.01f, 1.2f, 1.5f);
+                pose.Scale = unitScale ? Float3.One : new Float3(1f + i * 0.01f, 1.2f, 1.5f);
                 var history = new PoseHistory();
                 history.Reset(pose);
-                var value = new Input { Destination = Pose.Identity, Transition = PoseTransition.Create(history, Pose.Identity, 1f), Elapsed = i / 128f, Vector = new float3(i * 0.03f, i * 0.01f, 0.5f), Rotation = quaternion.RotateY(i * 0.01f) };
-                UnsafeUtility.WriteArrayElement(inputs.GetUnsafePtr(), i, value);
+                var destination = Pose.Identity;
+                inputs[i] = new Input { Destination = destination, Transition = PoseTransition.Create(history, destination, 1f), Elapsed = i / 128f, Vector = new float3(i * 0.03f, i * 0.01f, 0.5f), Rotation = quaternion.RotateY(i * 0.01f) };
             }
-            var data = (Input*)inputs.GetUnsafeReadOnlyPtr();
+        }
+
+        public static string Run(string output)
+        {
+            const int count = 64;
+            const int iterations = 200000;
+            using var scaled = new NativeArray<Input>(count, Allocator.Temp);
+            using var unit = new NativeArray<Input>(count, Allocator.Temp);
+            Fill(scaled, false);
+            Fill(unit, true);
+            var unitData = (Input*)unit.GetUnsafeReadOnlyPtr();
+            var data = (Input*)scaled.GetUnsafeReadOnlyPtr();
             var kernel = BurstCompiler.CompileFunctionPointer<Loop>(Kernel);
             var convert = BurstCompiler.CompileFunctionPointer<Loop>(Convert);
             var baseline = BurstCompiler.CompileFunctionPointer<Loop>(Baseline);
-            var managedNs = Measure(Kernel, data, count, iterations, out var managed);
+            var managedNs = Measure(KernelBody, data, count, iterations, out var managed);
             var burstNs = Measure(kernel.Invoke, data, count, iterations, out var native);
             var conversionNs = Measure(convert.Invoke, data, count, iterations, out var converted);
             var baselineNs = Measure(baseline.Invoke, data, count, iterations, out var direct);
-            if (managed.Native != 0 || native.Native != 1 || converted.Native != 1 || direct.Native != 1)
-                throw new InvalidOperationException("Native cost proof fell back to managed execution");
-            if (Math.Abs(managed.Checksum - native.Checksum) > Math.Abs(managed.Checksum) * 1e-5f || converted.Checksum != direct.Checksum)
+            var managedUnitNs = Measure(KernelBody, unitData, count, iterations, out var managedUnit);
+            var burstUnitNs = Measure(kernel.Invoke, unitData, count, iterations, out var nativeUnit);
+            if (managed.Native != 0 || managedUnit.Native != 0 || native.Native != 1 || nativeUnit.Native != 1 || converted.Native != 1 || direct.Native != 1)
+                throw new InvalidOperationException($"Native cost proof fell back to managed execution: managed={managed.Native}/{managedUnit.Native} kernel={native.Native}/{nativeUnit.Native} convert={converted.Native} baseline={direct.Native}");
+            if (Math.Abs(managed.Checksum - native.Checksum) > Math.Abs(managed.Checksum) * 1e-5f || Math.Abs(managedUnit.Checksum - nativeUnit.Checksum) > Math.Abs(managedUnit.Checksum) * 1e-5f || converted.Checksum != direct.Checksum)
                 throw new InvalidOperationException("Cost-probe output checksums disagree");
             var report = new Report
             {
                 UnityVersion = Application.unityVersion, Cpu = SystemInfo.processorType,
-                Scope = "Warmed Editor CoreCLR/Burst single-thread 64-case batches; loop/checksum and one delegate/function-pointer boundary included; not isolated conversion instruction cost, GPU, crowd or full-frame timing",
+                Scope = "Warmed Editor CoreCLR/Burst single-thread 64-case batches, non-unit scale (worst case) and unit scale (typical rigs); loop/checksum and one delegate/function-pointer boundary included; not isolated conversion instruction cost, GPU, crowd or full-frame timing",
                 Cases = count, IterationsPerSample = iterations, Samples = 5, NativeExecution = native.Native, ManagedControl = managed.Native,
-                KernelChecksum = native.Checksum, ConversionChecksum = converted.Checksum,
-                ManagedKernelNs = managedNs, BurstKernelNs = burstNs, BurstConversionLoopNs = conversionNs, BurstBaselineLoopNs = baselineNs,
+                KernelChecksum = native.Checksum, UnitScaleChecksum = nativeUnit.Checksum, ConversionChecksum = converted.Checksum,
+                ManagedKernelNs = managedNs, BurstKernelNs = burstNs, ManagedKernelUnitScaleNs = managedUnitNs, BurstKernelUnitScaleNs = burstUnitNs, BurstConversionLoopNs = conversionNs, BurstBaselineLoopNs = baselineNs,
                 Float3Bytes = UnsafeUtility.SizeOf<Float3>(), QuaternionBytes = UnsafeUtility.SizeOf<MotionQuaternion>(), PoseBytes = UnsafeUtility.SizeOf<Pose>(), HistoryBytes = UnsafeUtility.SizeOf<PoseHistory>(), TransitionBytes = UnsafeUtility.SizeOf<PoseTransition>()
             };
             Directory.CreateDirectory(Path.GetDirectoryName(output));
