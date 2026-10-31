@@ -39,13 +39,19 @@ namespace SA.Reactions
                     ResetToAnimation(manager, rig, bodies);
                     ragdoll.Mode = RagdollMode.Tracking;
                     ragdoll.Timer = 0f;
+                    ragdoll.Strength = ResetStrength;
                 }
             }
             else
                 ragdoll.Strength = math.min(ragdoll.MaxStrength, ragdoll.Strength + ragdoll.RecoverRate * dt);
             manager.SetComponentData(rig, ragdoll);
-            WriteTargets(manager, rig, ragdoll.Strength, bodies, specs);
+            var tone = ragdoll.Mode == RagdollMode.Limp ? ragdoll.LimpTone : ragdoll.Strength;
+            WriteTargets(manager, rig, ragdoll.Strength, tone, bodies, specs);
         }
+
+        const float LocalShare = 0.4f;
+        const float MaxLocalSpeed = 4f;
+        const float ResetStrength = 0.8f;
 
         static void ApplyHits(EntityManager manager, Entity rig, ref Ragdoll ragdoll, NativeArray<RagdollBody> bodies)
         {
@@ -55,12 +61,27 @@ namespace SA.Reactions
                 var hit = hits[i];
                 if (hit.Role < 0 || hit.Role >= bodies.Length)
                     continue;
-                var body = bodies[hit.Role].Body;
-                var velocity = manager.GetComponentData<PhysicsVelocity>(body);
-                var mass = manager.GetComponentData<PhysicsMass>(body);
-                var transform = manager.GetComponentData<LocalTransform>(body);
-                velocity.ApplyImpulse(mass, transform.Position, transform.Rotation, hit.Impulse, hit.Point);
-                manager.SetComponentData(body, velocity);
+                var totalMass = 0f;
+                for (var role = 0; role < bodies.Length; role++)
+                    totalMass += 1f / math.max(1e-6f, manager.GetComponentData<PhysicsMass>(bodies[role].Body).InverseMass);
+                for (var role = 0; role < bodies.Length; role++)
+                {
+                    var body = bodies[role].Body;
+                    var velocity = manager.GetComponentData<PhysicsVelocity>(body);
+                    var mass = manager.GetComponentData<PhysicsMass>(body);
+                    velocity.ApplyLinearImpulse(mass, hit.Impulse * ((1f - LocalShare) / mass.InverseMass / totalMass));
+                    if (role == hit.Role)
+                    {
+                        var transform = manager.GetComponentData<LocalTransform>(body);
+                        var local = hit.Impulse * LocalShare;
+                        var cap = MaxLocalSpeed / mass.InverseMass;
+                        var length = math.length(local);
+                        if (length > cap)
+                            local *= cap / length;
+                        velocity.ApplyImpulse(mass, transform.Position, transform.Rotation, local, hit.Point);
+                    }
+                    manager.SetComponentData(body, velocity);
+                }
                 var magnitude = math.length(hit.Impulse);
                 ragdoll.Strength = math.max(0f, ragdoll.Strength - magnitude * ragdoll.StrengthLossPerImpulse);
                 if (magnitude >= ragdoll.LimpImpulse && ragdoll.Mode == RagdollMode.Tracking)
@@ -72,24 +93,33 @@ namespace SA.Reactions
             hits.Clear();
         }
 
-        static void WriteTargets(EntityManager manager, Entity rig, float strength, NativeArray<RagdollBody> bodies, NativeArray<RagdollRoleSpec> specs)
+        static void WriteTargets(EntityManager manager, Entity rig, float strength, float tone, NativeArray<RagdollBody> bodies, NativeArray<RagdollRoleSpec> specs)
         {
-            if (!RagdollPose.Evaluate(manager, rig, out _, out var model))
+            if (!RagdollPose.Evaluate(manager, rig, out var modelPosition, out var model))
                 return;
+            var origin = manager.GetComponentData<LocalToWorld>(rig);
+            var originRotation = math.normalize(origin.Rotation);
             for (var i = 0; i < specs.Length; i++)
             {
                 var spec = specs[i];
-                if (spec.ParentRole < 0)
-                    continue;
-                var childBone = bodies[spec.Role].BoneIndex;
-                var parentBone = bodies[spec.ParentRole].BoneIndex;
-                if (childBone < 0 || parentBone < 0)
+                var boneIndex = bodies[spec.Role].BoneIndex;
+                if (boneIndex < 0)
                     continue;
                 var body = bodies[spec.Role].Body;
+                var track = manager.GetComponentData<PoseTrack>(body);
+                track.Position = origin.Position + math.rotate(originRotation, modelPosition[boneIndex]);
+                track.Rotation = math.mul(originRotation, model[boneIndex]);
+                track.Gain = spec.TrackGain * strength;
+                manager.SetComponentData(body, track);
+                if (spec.ParentRole < 0)
+                    continue;
+                var parentBone = bodies[spec.ParentRole].BoneIndex;
+                if (parentBone < 0)
+                    continue;
                 var drive = manager.GetComponentData<PoseDrive>(body);
-                drive.Target = math.mul(math.inverse(model[parentBone]), model[childBone]);
-                drive.Strength = strength;
-                drive.MaxTorque = spec.MaxTorque * strength;
+                drive.Target = math.mul(math.inverse(model[parentBone]), model[boneIndex]);
+                drive.Strength = tone;
+                drive.MaxTorque = spec.MaxTorque * tone;
                 manager.SetComponentData(body, drive);
             }
         }

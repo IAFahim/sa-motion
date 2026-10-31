@@ -2,7 +2,11 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 unity=1
-[ "${1:-}" = "--no-unity" ] && unity=0
+demo=0
+for argument in "$@"; do
+  [ "$argument" = "--no-unity" ] && unity=0
+  [ "$argument" = "--demo" ] && demo=1
+done
 mkdir -p artifacts/verify
 failures=0
 rows=()
@@ -31,6 +35,10 @@ if [ "$unity" = 1 ]; then
     [ -z "$assembly" ] && continue
     step "unity-$assembly" eng/unity.sh test "$assembly"
   done < eng/unity-test-assemblies.txt
+fi
+
+if [ "$unity" = 1 ] && [ "$demo" = 1 ]; then
+  step reactions-demo python3 eng/demo_check.py
 fi
 
 python3 - "$failures" "${rows[@]}" <<'PY'

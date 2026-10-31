@@ -35,29 +35,50 @@ namespace SA.Reactions
                 if (bodies[role].BoneIndex >= 0 && bodies[role].BoneIndex < count)
                     bodyOfBone[bodies[role].BoneIndex] = bodies[role].Body;
             var origin = manager.GetComponentData<LocalToWorld>(rig);
+            var originRotation = math.normalize(origin.Rotation);
             var worldPosition = new NativeArray<float3>(count, Allocator.Temp);
             var worldRotation = new NativeArray<quaternion>(count, Allocator.Temp);
+            var pelvisBone = -1;
+            var pelvisBody = Entity.Null;
+            for (var role = 0; role < bodies.Length; role++)
+                if (bodies[role].BoneIndex >= 0 && bodies[role].BoneIndex < count && bodies[role].ParentRole < 0)
+                {
+                    pelvisBone = bodies[role].BoneIndex;
+                    pelvisBody = bodies[role].Body;
+                }
+            if (pelvisBone < 0)
+                return;
             for (var b = 0; b < count; b++)
             {
                 var parent = blob.Bones[b].Parent;
                 var parentPosition = parent < 0 ? origin.Position : worldPosition[parent];
-                var parentRotation = parent < 0 ? math.normalize(origin.Rotation) : worldRotation[parent];
+                var parentRotation = parent < 0 ? originRotation : worldRotation[parent];
                 var local = manager.GetComponentData<LocalTransform>(bones[b].Value);
+                worldPosition[b] = parentPosition + math.rotate(parentRotation, local.Position);
+                worldRotation[b] = math.mul(parentRotation, local.Rotation);
+            }
+            var offset = manager.GetComponentData<LocalTransform>(pelvisBody).Position - worldPosition[pelvisBone];
+            for (var b = 0; b < count; b++)
+            {
+                var parent = blob.Bones[b].Parent;
+                var parentPosition = parent < 0 ? origin.Position : worldPosition[parent];
+                var parentRotation = parent < 0 ? originRotation : worldRotation[parent];
+                var local = manager.GetComponentData<LocalTransform>(bones[b].Value);
+                if (parent < 0)
+                {
+                    local.Position += math.rotate(math.inverse(originRotation), offset);
+                    manager.SetComponentData(bones[b].Value, local);
+                }
                 if (bodyOfBone[b] != Entity.Null)
                 {
                     var body = manager.GetComponentData<LocalTransform>(bodyOfBone[b]);
-                    var inverse = math.inverse(parentRotation);
-                    local.Position = math.rotate(inverse, body.Position - parentPosition);
-                    local.Rotation = math.mul(inverse, body.Rotation);
+                    local.Rotation = math.mul(math.inverse(parentRotation), body.Rotation);
                     manager.SetComponentData(bones[b].Value, local);
-                    worldPosition[b] = body.Position;
                     worldRotation[b] = body.Rotation;
                 }
                 else
-                {
-                    worldPosition[b] = parentPosition + math.rotate(parentRotation, local.Position);
                     worldRotation[b] = math.mul(parentRotation, local.Rotation);
-                }
+                worldPosition[b] = parentPosition + math.rotate(parentRotation, local.Position);
             }
         }
     }

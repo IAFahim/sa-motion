@@ -28,6 +28,7 @@ namespace SA.Reactions.Editor
         public float2 TwistRange;
         public float Frequency;
         public float MaxTorque;
+        public float TrackGain;
     }
 
     static class RagdollGeometry
@@ -49,6 +50,11 @@ namespace SA.Reactions.Editor
         static readonly float[] Frequency =
         {
             0f, 14f, 18f, 14f, 14f, 14f, 14f, 18f, 18f, 16f, 16f, 18f, 18f, 26f, 26f
+        };
+
+        static readonly float[] Track =
+        {
+            0.06f, 0.08f, 0.06f, 0.06f, 0.06f, 0.055f, 0.055f, 0.05f, 0.05f, 0.09f, 0.09f, 0.09f, 0.09f, 0.14f, 0.14f
         };
 
         static readonly float[] Torque =
@@ -228,7 +234,8 @@ namespace SA.Reactions.Editor
                     Shape = shape,
                     Mass = HumanProfile.Mass(r, totalMass),
                     Frequency = Frequency[role] * gainScale,
-                    MaxTorque = Torque[role] * gainScale * totalMass / 70f
+                    MaxTorque = Torque[role] * gainScale * totalMass / 70f,
+                    TrackGain = Track[role]
                 };
                 if (parent >= 0)
                 {

@@ -28,10 +28,12 @@ Each packet has its own spec in `docs/packets/<ID>.md`. The spec is the whole ta
 |---|---|---|---|
 | U1 (done on branch `u1-inertialization` of com.sa.unity, not merged to main; baker path unverified) | SA integration of inertialization (plan P3): `Transitions.cs`, opt-in `Playback` overloads, fixed-clock exclusion, CPU correction order. Existing APIs unchanged. | N1, N6 | SA suite 35/35 plus new tests. `CrossFade` regression green. Interrupted and repeated requests tested. |
 | U2 (done, see `docs/gate-m.md`; items 6 and 7 open) | Reactions package skeleton and the two-body Gate M fixture (plan P1): real limit joint, world refit, observation, rendered response. | N2, N3 | Plan section 8.3 passes with numeric traces and a captured frame. |
-| U3 | Humanoid baker (plan P2): `RagdollBaker` consuming N4 and N5, unparented proxies, shared blobs. | N4, N5, U2 | One Avatar humanoid and one generic humanoid bake. Subscene reload and two instances work. |
+| U3 (demo-level done: `RagdollBaker`, see `docs/demo.md`; Gate B not claimed) | Humanoid baker (plan P2): `RagdollBaker` consuming N4 and N5, unparented proxies, shared blobs. | N4, N5, U2 | One Avatar humanoid and one generic humanoid bake. Subscene reload and two instances work. |
 | U4 | GPU inertialization (plan P4): mirror the specified math in HLSL. | U1 | Real GPU parity against the C# kernel on the same inputs. |
 
 ## Wave R: controller port and harness (Gate L decided, see `docs/provenance.md`)
+
+Status 2026-10-31: R1, R3 to R8, H1 and N11 are merged and tested (SA.ReactionControl 79 tests, harness 8, humanoid 57). They are **not yet connected** to Unity; the demo uses physical animation instead. Next: R2 (tick and carried fields), R9 (assemble), R10 (profile), then a GPL adapter package that feeds the controller from `RoleBody` snapshots and applies its `JointDrive` output.
 
 Pure .NET, start all at once. Shared rules: `docs/packets/R-common.md`. The shared contract (`RoleBody`, `SupportProbe`, `JointDrive`) is fixed by the integrator.
 

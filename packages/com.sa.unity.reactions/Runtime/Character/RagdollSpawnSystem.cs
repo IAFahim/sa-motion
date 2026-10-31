@@ -75,6 +75,7 @@ namespace SA.Reactions
                 manager.SetComponentData(body, mass);
                 manager.SetComponentData(body, new PhysicsDamping { Linear = 0.02f, Angular = 0.08f });
                 manager.SetComponentData(body, new RagdollOwner { Rig = rig, Role = spec.Role });
+                manager.AddComponentData(body, new PoseTrack { MaxLinearSpeed = 3f, MaxAngularSpeed = 20f, Rotation = quaternion.identity });
                 bodies[spec.Role] = body;
                 bodyBuffer = manager.GetBuffer<RagdollBody>(rig);
                 bodyBuffer[spec.Role] = new RagdollBody { Body = body, BoneIndex = boneIndex, ParentRole = spec.ParentRole };

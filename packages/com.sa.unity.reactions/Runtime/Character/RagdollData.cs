@@ -15,6 +15,7 @@ namespace SA.Reactions
         public float RecoverRate;
         public float LimpSeconds;
         public float LimpImpulse;
+        public float LimpTone;
         public float StrengthLossPerImpulse;
         public float StandHeight;
         public byte Spawned;
@@ -38,6 +39,7 @@ namespace SA.Reactions
         public float Frequency;
         public float DampingRatio;
         public float MaxTorque;
+        public float TrackGain;
     }
 
     [InternalBufferCapacity(0)]

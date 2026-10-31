@@ -1,0 +1,14 @@
+{
+  "name": "ReactionsDemo.Editor",
+  "rootNamespace": "",
+  "references": ["SA.Runtime", "SA.Reactions.Character", "ReactionsDemo", "Unity.Scenes"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

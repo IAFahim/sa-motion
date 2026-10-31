@@ -1,9 +1,18 @@
 {
   "name": "com.sa.unity.reactions",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "displayName": "SA Reactions",
-  "description": "Physics-driven pose tracking for Unity Physics ragdolls: bounded angular-impulse drives applied after the physics world is built.",
+  "description": "Physics-driven characters for Unity Physics: automatic 15-body ragdoll from a rig, drives and velocity tracking toward the animation, hit reactions, limp and reset.",
   "unity": "7000.0",
   "license": "MIT",
-  "author": { "name": "SA" }
+  "author": {
+    "name": "SA"
+  },
+  "samples": [
+    {
+      "displayName": "Reactions Demo",
+      "description": "Two Robot Kyles: an active ragdoll that takes hits, and an inertialized locomotion switcher.",
+      "path": "Samples~/ReactionsDemo"
+    }
+  ]
 }

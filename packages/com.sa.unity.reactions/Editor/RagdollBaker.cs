@@ -31,6 +31,7 @@ namespace SA.Reactions.Editor
                 RecoverRate = 1f / math.max(0.1f, authoring.RecoverSeconds),
                 LimpSeconds = authoring.LimpSeconds,
                 LimpImpulse = authoring.LimpImpulse,
+                LimpTone = authoring.LimpTone,
                 StrengthLossPerImpulse = authoring.StrengthLossPerImpulse
             });
             AddBuffer<RagdollBody>(entity);
@@ -55,7 +56,8 @@ namespace SA.Reactions.Editor
                     TwistRange = item.TwistRange,
                     Frequency = item.Frequency,
                     DampingRatio = 1f,
-                    MaxTorque = item.MaxTorque
+                    MaxTorque = item.MaxTorque,
+                    TrackGain = item.TrackGain
                 });
             }
         }
