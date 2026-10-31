@@ -79,3 +79,28 @@ public class CapturePointScoreTests
         Assert.True(card.Score > 51, Evaluator.Table(card));
     }
 }
+
+public class MergedScoreTests
+{
+    readonly ITestOutputHelper output;
+
+    public MergedScoreTests(ITestOutputHelper output) => this.output = output;
+
+    static void Publish(string name, Func<SA.Balance.Contract.IBalanceController> factory, ITestOutputHelper output)
+    {
+        var card = Evaluator.Run(name, factory);
+        output.WriteLine(Evaluator.Table(card));
+        Evaluator.Write(card, Path.Combine(AppContext.BaseDirectory, "../../../../../artifacts/balance"));
+        Assert.True(card.StandPassed, Evaluator.Table(card));
+        Assert.True(card.Deterministic);
+    }
+
+    [Fact]
+    public void CapturePointTunedPublishesItsScorecard() => Publish("capture-point-tuned", () => new CapturePointController(TunedParams.Tuned), output);
+
+    [Fact]
+    public void ArmAssistPublishesItsScorecard() => Publish("arm-assist", () => new SA.Balance.Arms.ArmAssistController(), output);
+
+    [Fact]
+    public void ArmAssistTunedPublishesItsScorecard() => Publish("arm-assist-tuned", () => new SA.Balance.Arms.ArmAssistController(TunedParams.Tuned), output);
+}

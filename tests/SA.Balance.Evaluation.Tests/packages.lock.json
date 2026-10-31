@@ -107,6 +107,15 @@
           "SA.Motion": "[0.1.0, )"
         }
       },
+      "sa.balance.arms": {
+        "type": "Project",
+        "dependencies": {
+          "SA.Balance": "[1.0.0, )",
+          "SA.Balance.Abstractions": "[1.0.0, )",
+          "SA.Humanoid": "[1.0.0, )",
+          "SA.Motion": "[0.1.0, )"
+        }
+      },
       "sa.balance.evaluation": {
         "type": "Project",
         "dependencies": {
