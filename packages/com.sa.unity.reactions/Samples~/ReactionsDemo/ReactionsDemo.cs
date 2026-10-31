@@ -122,7 +122,7 @@ public class ReactionsDemo : MonoBehaviour
             var name = segment switch { 1 => LocomotionNames[0], 2 => LocomotionNames[1], 3 => LocomotionNames[2], 4 => LocomotionNames[1], 5 => LocomotionNames[0], _ => IdleName };
             var states = manager.GetBuffer<ClipState>(rig);
             var intent = manager.GetComponentData<TransitionIntent>(rig);
-            TransitionPlayback.Play(ref states, ref intent, (uint)(segment + 1), Names.Clip(clips, name), 0.4f, options);
+            TransitionPlayback.PlaySynced(ref states, ref intent, (uint)(segment + 1), Names.Clip(clips, name), 0.4f, options);
             manager.SetComponentData(rig, intent);
         }
     }

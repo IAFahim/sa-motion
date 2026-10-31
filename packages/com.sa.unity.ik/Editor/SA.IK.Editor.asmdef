@@ -1,0 +1,5 @@
+{
+  "name": "SA.IK.Editor",
+  "references": ["SA.IK", "SA.Runtime", "SA.Editor", "Unity.Collections", "Unity.Entities", "Unity.Entities.Hybrid", "Unity.Mathematics"],
+  "includePlatforms": ["Editor"]
+}

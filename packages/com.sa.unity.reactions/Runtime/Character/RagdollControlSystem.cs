@@ -64,6 +64,7 @@ namespace SA.Reactions
                 var hit = hits[i];
                 if (hit.Role < 0 || hit.Role >= bodies.Length)
                     continue;
+                HitReactions.Play(manager, rig);
                 var totalMass = 0f;
                 for (var role = 0; role < bodies.Length; role++)
                     totalMass += 1f / math.max(1e-6f, manager.GetComponentData<PhysicsMass>(bodies[role].Body).InverseMass);

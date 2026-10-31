@@ -1,7 +1,7 @@
 {
   "name": "ReactionsDemo.Editor",
   "rootNamespace": "",
-  "references": ["SA.Runtime", "SA.Editor", "SA.Reactions.Character", "ReactionsDemo", "Unity.Scenes"],
+  "references": ["SA.Runtime", "SA.Editor", "SA.Reactions.Character", "SA.IK", "ReactionsDemo", "Unity.Scenes"],
   "includePlatforms": ["Editor"],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

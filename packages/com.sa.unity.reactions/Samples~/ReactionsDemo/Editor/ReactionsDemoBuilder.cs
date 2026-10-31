@@ -13,7 +13,6 @@ public static class ReactionsDemoBuilder
     const string Directory = "Assets/ReactionsDemo/";
     const string Source = "Assets/SA Demo/Kyle SA Cpu.prefab";
     const string UpperBodyMask = "Assets/SA Demo/UpperBody.mask";
-    const string KyleMaterial = "Assets/SA Demo/Kyle SA.mat";
     const string UalModel = "Assets/UAL/UAL1_Standard.fbx";
     static readonly string[] UalClips = { "Armature|Idle_Loop", "Armature|Walk_Loop", "Armature|Jog_Fwd_Loop", "Armature|Sprint_Loop", "Armature|Hit_Chest", "Armature|Hit_Head" };
 
@@ -24,9 +23,8 @@ public static class ReactionsDemoBuilder
         var upper = AssetDatabase.LoadAssetAtPath<AvatarMask>(UpperBodyMask);
         if (source == null || upper == null)
             return $"Missing {Source} or {UpperBodyMask}. Import the SA Showcase sample and build its Kyle prefabs first.";
-        var inPlace = InPlaceMask();
-        var ragdoll = MakePrefab(source, "Kyle Ragdoll", upper, inPlace, true);
-        var inertial = MakePrefab(source, "Kyle Inertial", upper, inPlace, false);
+        var ragdoll = MakePrefab(source, "Kyle Ragdoll", upper, true);
+        var inertial = MakePrefab(source, "Kyle Inertial", upper, false);
         return Compose("ReactionsDemo", ragdoll, inertial, _ => { });
     }
 
@@ -84,35 +82,19 @@ public static class ReactionsDemoBuilder
         return "built " + main.path;
     }
 
-    static Material SaMaterial(Material source)
-    {
-        var path = Directory + "UAL SA " + source.name + ".mat";
-        AssetDatabase.DeleteAsset(path);
-        var material = new Material(AssetDatabase.LoadAssetAtPath<Material>(KyleMaterial));
-        material.SetTexture("_BaseMap", source.HasProperty("_BaseMap") ? source.GetTexture("_BaseMap") : source.mainTexture);
-        material.SetColor("_BaseColor", source.HasProperty("_BaseColor") ? source.GetColor("_BaseColor") : source.HasProperty("_Color") ? source.GetColor("_Color") : Color.white);
-        AssetDatabase.CreateAsset(material, path);
-        return material;
-    }
-
     static GameObject MakeUalPrefab(GameObject model, string name, bool ragdoll)
     {
         var instance = (GameObject)PrefabUtility.InstantiatePrefab(model);
         PrefabUtility.UnpackPrefabInstance(instance, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
         instance.name = name;
-        var rig = instance.AddComponent<RigAuthoring>();
+        var rig = CharacterSetup.Configure(instance);
+        var extra = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/UAL/UAL2_Standard.fbx");
+        if (extra != null)
+            rig.AnimationLibraries.Add(extra);
         rig.Engine = Engine.Cpu;
-        rig.Clips = new List<AnimationClip>();
-        foreach (var asset in AssetDatabase.LoadAllAssetsAtPath(UalModel))
-            if (asset is AnimationClip clip && Array.IndexOf(UalClips, clip.name) >= 0)
-                rig.Clips.Add(clip);
-        rig.Autoplay = rig.Clips.Find(clip => clip.name == UalClips[0]);
+        rig.Autoplay = AnimationDiscovery.Clips(rig).Find(clip => clip.name == UalClips[0]);
         rig.Inertialize = true;
-        SkinnedMeshConversion.Convert(instance);
-        foreach (var renderer in instance.GetComponentsInChildren<MeshRenderer>(true))
-        {
-            renderer.sharedMaterials = Array.ConvertAll(renderer.sharedMaterials, SaMaterial);
-        }
+        rig.FootIK = !ragdoll;
         if (ragdoll)
             instance.AddComponent<RagdollAuthoring>();
         var saved = PrefabUtility.SaveAsPrefabAsset(instance, Directory + name + ".prefab");
@@ -120,29 +102,16 @@ public static class ReactionsDemoBuilder
         return saved;
     }
 
-    static AvatarMask InPlaceMask()
-    {
-        var path = Directory + "InPlace.mask";
-        AssetDatabase.DeleteAsset(path);
-        var mask = new AvatarMask { name = "InPlace", transformCount = 3 };
-        mask.SetTransformPath(0, "Root");
-        mask.SetTransformActive(0, false);
-        mask.SetTransformPath(1, "Root/Hip");
-        mask.SetTransformActive(1, true);
-        mask.SetTransformPath(2, "Root/Ribs");
-        mask.SetTransformActive(2, true);
-        AssetDatabase.CreateAsset(mask, path);
-        return mask;
-    }
-
-    static GameObject MakePrefab(GameObject source, string name, AvatarMask upper, AvatarMask inPlace, bool ragdoll)
+    static GameObject MakePrefab(GameObject source, string name, AvatarMask upper, bool ragdoll)
     {
         var instance = (GameObject)PrefabUtility.InstantiatePrefab(source);
         PrefabUtility.UnpackPrefabInstance(instance, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
         instance.name = name;
-        var rig = instance.GetComponent<RigAuthoring>();
-        rig.Masks = new List<AvatarMask> { upper, inPlace };
+        var rig = CharacterSetup.Configure(instance);
+        rig.Masks = new List<AvatarMask> { upper };
+        rig.InPlace = true;
         rig.Inertialize = true;
+        rig.FootIK = !ragdoll;
         if (ragdoll)
             instance.AddComponent<RagdollAuthoring>();
         var path = Directory + name + ".prefab";
@@ -155,5 +124,27 @@ public static class ReactionsDemoBuilder
     {
         var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
         go.transform.position = position;
+        if (go.GetComponent<RagdollAuthoring>() == null)
+        {
+            var ik = go.AddComponent<SA.IK.IKAuthoring>();
+            ik.HeadTarget = Target(go.name + " Head Target", position + new Vector3(0f, 1.7f, 2f), new Vector3(0.6f, 0.1f, 0f));
+            ik.HeadAngle = 45f;
+            ik.ReachTargets = new List<SA.IK.LimbTarget>
+            {
+                new SA.IK.LimbTarget { Limb = SA.IK.Limb.LeftArm, Target = Target(go.name + " Hand Target", position + new Vector3(-0.6f, 1.1f, 0.5f), new Vector3(0.1f, 0.15f, 0.1f)), Weight = 0.8f }
+            };
+        }
+    }
+
+    static Transform Target(string name, Vector3 position, Vector3 range)
+    {
+        var target = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        target.name = name;
+        target.transform.position = position;
+        target.transform.localScale = Vector3.one * 0.06f;
+        UnityEngine.Object.DestroyImmediate(target.GetComponent<Collider>());
+        var motion = target.AddComponent<SA.IK.IKTargetMotionAuthoring>();
+        motion.Range = range;
+        return target.transform;
     }
 }

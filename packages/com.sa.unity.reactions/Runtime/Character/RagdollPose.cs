@@ -27,6 +27,7 @@ namespace SA.Reactions
                 rotation[b] = parent < 0 ? pose.Rotation : math.mul(rotation[parent], pose.Rotation);
                 position[b] = parent < 0 ? pose.Position : position[parent] + math.rotate(rotation[parent], pose.Position);
             }
+            SA.IK.ModelConstraints.Apply(manager, rig, position, rotation);
             return true;
         }
     }

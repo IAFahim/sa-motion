@@ -1,7 +1,7 @@
 {
   "package": "SA.Motion.0.1.0.nupkg",
   "framework": "netstandard2.1",
-  "sha256": "11a6faa1a590c7690e2e70fb974ec478ffec31e83fe416e4b2a98a3703eb8026",
+  "sha256": "5c6dbe2194513762cd284cf6bf469bacb3f55c027edc8f8f12575e84bdbb7587",
   "version": "0.1.0.0",
   "assemblyReferences": [
     "netstandard"

@@ -30,6 +30,7 @@ Each packet has its own spec in `docs/packets/<ID>.md`. The spec is the whole ta
 | U2 (done, see `docs/gate-m.md`; items 6 and 7 open) | Reactions package skeleton and the two-body Gate M fixture (plan P1): real limit joint, world refit, observation, rendered response. | N2, N3 | Plan section 8.3 passes with numeric traces and a captured frame. |
 | U3 (demo-level done: `RagdollBaker`, see `docs/demo.md`; Gate B not claimed) | Humanoid baker (plan P2): `RagdollBaker` consuming N4 and N5, unparented proxies, shared blobs. | N4, N5, U2 | One Avatar humanoid and one generic humanoid bake. Subscene reload and two instances work. |
 | U4 | GPU inertialization (plan P4): mirror the specified math in HLSL. | U1 | Real GPU parity against the C# kernel on the same inputs. |
+| U5 (done on `packet/U5-simple-setup` in both repos; see `docs/handoff/U5.md`) | Automatic character/animation-pack setup, multi-material skins, in-place, gait-phase retention, optional IK/foot locking and hit flinches. | U1, U3 | Full verification 22/22, Kyle demo 8/8, live UAL and cross-pack Humanoid sampling. |
 
 ## Wave R: controller port and harness (Gate L decided, see `docs/provenance.md`)
 

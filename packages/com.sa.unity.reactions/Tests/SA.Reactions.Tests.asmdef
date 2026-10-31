@@ -3,6 +3,8 @@
   "rootNamespace": "SA.Reactions.Tests",
   "references": [
     "SA.Reactions",
+    "SA.Reactions.Character",
+    "SA.Runtime",
     "SA.Motion.Unity",
     "Unity.Burst",
     "Unity.Collections",
@@ -17,7 +19,7 @@
   "excludePlatforms": [],
   "allowUnsafeCode": true,
   "overrideReferences": true,
-  "precompiledReferences": ["nunit.framework.dll", "SA.Motion.dll"],
+  "precompiledReferences": ["nunit.framework.dll", "SA.Motion.dll", "SA.Humanoid.dll"],
   "autoReferenced": false,
   "defineConstraints": ["UNITY_INCLUDE_TESTS"],
   "versionDefines": [],

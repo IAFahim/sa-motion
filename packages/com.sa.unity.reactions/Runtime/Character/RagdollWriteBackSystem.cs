@@ -16,8 +16,12 @@ namespace SA.Reactions
             var dt = SystemAPI.Time.DeltaTime;
             using var rigs = new NativeList<Entity>(Allocator.Temp);
             foreach (var (ragdoll, entity) in SystemAPI.Query<RefRO<Ragdoll>>().WithEntityAccess())
+            {
+                if (manager.HasComponent<ExternalPoseControl>(entity))
+                    manager.SetComponentEnabled<ExternalPoseControl>(entity, ragdoll.ValueRO.Spawned == 1 && ragdoll.ValueRO.BlendLeft <= 0f);
                 if (ragdoll.ValueRO.Spawned == 1 && ragdoll.ValueRO.BlendLeft <= 0f)
                     rigs.Add(entity);
+            }
             foreach (var rig in rigs)
                 WriteBack(manager, rig, dt);
         }

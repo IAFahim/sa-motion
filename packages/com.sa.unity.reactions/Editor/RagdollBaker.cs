@@ -11,7 +11,7 @@ namespace SA.Reactions.Editor
     {
         public override void Bake(RagdollAuthoring authoring)
         {
-            var animator = GetComponent<Animator>();
+            var animator = GetComponentInChildren<Animator>();
             if (animator != null && animator.avatar != null)
                 DependsOn(animator.avatar);
             var errors = new List<string>();
@@ -24,6 +24,25 @@ namespace SA.Reactions.Editor
             var group = -(1 + (math.abs(authoring.gameObject.GetEntityId().GetHashCode()) % 100000));
             var geometry = RagdollGeometry.Build(authoring.transform, bones, authoring.TotalMass, authoring.GainScale, group, errors);
             var entity = GetEntity(TransformUsageFlags.Dynamic);
+            AddComponent<ExternalPoseControl>(entity);
+            SetComponentEnabled<ExternalPoseControl>(entity, false);
+            var rigAuthoring = GetComponent<RigAuthoring>();
+            var animations = SA.Editor.AnimationDiscovery.Clips(rigAuthoring);
+            var flinch = authoring.Flinch;
+            if (flinch == null)
+                flinch = animations.Find(c => c.name.ToLowerInvariant().Contains("hit_chest")) ?? animations.Find(c =>
+                    c.name.ToLowerInvariant().Contains("hit_") || c.name.ToLowerInvariant().StartsWith("hit") || c.name.ToLowerInvariant().Contains("flinch"));
+            if (flinch != null)
+            {
+                DependsOn(flinch);
+                var flinchName = new FixedString64Bytes();
+                flinchName.CopyFromTruncated(SA.Editor.AnimationDiscovery.Name(rigAuthoring, flinch, animations));
+                AddComponent(entity, new HitReactionState
+                {
+                    ClipName = SA.Names.Hash(flinchName),
+                    Layer = 2, Weight = authoring.FlinchWeight, FadeSeconds = 0.08f
+                });
+            }
             AddComponent(entity, new Ragdoll
             {
                 MaxStrength = authoring.MaxStrength,

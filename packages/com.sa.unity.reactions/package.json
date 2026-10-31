@@ -8,6 +8,12 @@
   "author": {
     "name": "SA"
   },
+  "dependencies": {
+    "com.sa.unity": "0.3.0",
+    "com.sa.motion.unity": "0.1.0",
+    "com.sa.unity.ik": "0.1.0",
+    "com.unity.physics": "6.7.0"
+  },
   "samples": [
     {
       "displayName": "Reactions Demo",

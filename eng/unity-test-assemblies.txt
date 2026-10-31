@@ -1,3 +1,4 @@
 SA.Tests
 SA.Motion.Unity.Tests
 SA.Reactions.Tests
+SA.IK.Tests

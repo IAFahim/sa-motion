@@ -1,0 +1,12 @@
+{
+  "name": "com.sa.unity.ik",
+  "version": "0.1.0",
+  "displayName": "SA IK",
+  "description": "Look-at and target-driven two-bone constraints for SA. Solver math lives in SA.Motion.",
+  "unity": "7000.0",
+  "license": "MIT",
+  "dependencies": {
+    "com.sa.unity": "0.3.0",
+    "com.sa.motion.unity": "0.1.0"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "name": "SA.IK",
+  "references": ["SA.Runtime", "SA.Motion.Unity", "Unity.Burst", "Unity.Collections", "Unity.Entities", "Unity.Mathematics", "Unity.Transforms"],
+  "allowUnsafeCode": true,
+  "overrideReferences": true,
+  "precompiledReferences": ["SA.Motion.dll"]
+}
