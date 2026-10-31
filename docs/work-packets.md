@@ -51,7 +51,9 @@ Pure .NET, start all at once. Shared rules: `docs/packets/R-common.md`. The shar
 
 Second wave, after R1 and H1 merge: R2 (`nmdbm.rs` 843-1474, body adapter and tick), R9 (assemble all areas into one controller tick and tune it in H1), R10 (independent parameter profile and tuning log).
 
-## Wave R2: next agents (start the first seven now)
+## Wave R2: next agents
+
+Status: R10, H2, N12, N13, T1 and D1 are merged into main (green). R2 passed none of its stand checks; it lives on `origin/integrate/r2` until R2b makes it green.
 
 | ID | Task | Needs | Owns |
 |---|---|---|---|
@@ -62,7 +64,8 @@ Second wave, after R1 and H1 merge: R2 (`nmdbm.rs` 843-1474, body adapter and ti
 | N13 | Soft joint limits as a corrective drive | none (MIT) | `SA.Motion/Mechanics/SoftLimits.cs` |
 | T1 | Totality fuzz of every controller entry point | R1, R3 to R8 (merged) | `tests/.../Totality/` |
 | D1 | Documentation refresh | none | `README.md`, `docs/index.md`, `docs/architecture.md` |
-| R9 | Assemble one reaction controller and tune it | R2, R10, H2 merged | `Controller/` |
+| R2b | Repair the balance tick until the stand check passes (R2 is on `integrate/r2`, red on purpose) | R2 on `integrate/r2` | `BalanceTick/`, `Balance/`, `docs/contract.md` |
+| R9 | Assemble one reaction controller and tune it | R2b green, R10, H2 merged | `Controller/` |
 
 ## Wave 3: still blocked
 
