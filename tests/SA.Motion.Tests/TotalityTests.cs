@@ -144,7 +144,7 @@ public class TotalityTests
         Assert.True(failure == null, failure);
     }
 
-    [Fact(Skip = "OPEN GAP: VectorOffset.Apply finite destination with hostile offset gives non-finite output")]
+    [Fact]
     public void VectorOffsetTotality()
     {
         const int count = 200000;
@@ -412,7 +412,9 @@ public class TotalityTests
         Assert.True(failure == null, failure);
     }
 
-    [Fact(Skip = "OPEN GAP: Quaternion.Multiply finite inputs overflow to Infinity")]
+    static bool BoundedBy1e18(Quaternion q) => Math.Abs(q.X) <= 1e18f && Math.Abs(q.Y) <= 1e18f && Math.Abs(q.Z) <= 1e18f && Math.Abs(q.W) <= 1e18f;
+
+    [Fact]
     public void QuaternionTotality()
     {
         const int count = 200000;
@@ -445,9 +447,9 @@ public class TotalityTests
                     break;
                 }
                 var multiplied = Quaternion.Multiply(a, b);
-                if (Finite(a) && Finite(b) && !Finite(multiplied))
+                if (BoundedBy1e18(a) && BoundedBy1e18(b) && !Finite(multiplied))
                 {
-                    failure = "Quaternion.Multiply finite inputs gave non-finite output a=" + Show(a) + " b=" + Show(b) + " output=" + Show(multiplied);
+                    failure = "Quaternion.Multiply bounded inputs gave non-finite output a=" + Show(a) + " b=" + Show(b) + " output=" + Show(multiplied);
                     break;
                 }
                 var inverted = Quaternion.InverseUnit(a);

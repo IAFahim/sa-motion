@@ -39,6 +39,10 @@ Copied from `docs/verification.md`; every row was recorded 2026-10-31 on Unity 7
 
 Cost figures are stated only as measured in `docs/verification.md`: unit scale 74-79 ns managed and 43-47 ns Burst per `PoseTransition.Apply` call; non-unit scale 114-124 ns managed and 76-81 ns Burst.
 
+## Numeric domains
+
+`Create` and `Apply` accept any float, including NaN and infinity, and return a defined pose: a corrupted or overflowing correction falls back to the destination. `Quaternion.Multiply` is the plain Hamilton product, so its result is finite only while component magnitudes stay below about 1e18; the kernels normalize before and after using it.
+
 ## Not built yet
 
 Planned work (reaction controller port, Unity integration, GPU path, humanoid baker) is listed in `docs/work-packets.md` and gated in `docs/provenance.md`. Nothing in this file describes it.

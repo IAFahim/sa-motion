@@ -31,7 +31,7 @@ eng/dotnet_test.sh
 python3 eng/check_source_rules.py
 ```
 
-Measured 2026-10-31: `eng/dotnet_test.sh` gives `Passed: 39, Failed: 0, Skipped: 0`; `python3 eng/check_source_rules.py` prints `source rules: ok`.
+Measured 2026-10-31 on the merged main: `eng/dotnet_test.sh` gives 134 passed, 0 failed, 0 skipped; `eng/dotnet_test.sh tests/SA.Humanoid.Tests/SA.Humanoid.Tests.csproj` gives 30 passed; `python3 eng/check_source_rules.py` prints `source rules: ok`.
 
 ## Not built yet
 

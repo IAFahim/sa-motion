@@ -5,6 +5,11 @@ exec 9>"${SA_UNITY_LOCK:-/tmp/sa-unity.lock}"
 flock 9
 cd "$project"
 
+if ! unity command --result-only console get --tail 1 >/dev/null 2>&1; then
+  echo "Unity Editor is not running or its Pipeline server is unreachable. Run eng/unity_start.sh first." >&2
+  exit 3
+fi
+
 recompile() {
   unity command --result-only script recompile >/dev/null 2>&1
   sleep 4

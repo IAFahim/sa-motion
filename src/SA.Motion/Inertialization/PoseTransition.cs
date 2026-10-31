@@ -26,7 +26,8 @@ namespace SA.Motion.Inertialization
         {
             if (Decay.Duration <= Scalar.DurationEpsilon || elapsed >= Decay.Duration)
                 return destination;
-            return destination + Direction * Decay.Evaluate(elapsed).Value;
+            var corrected = destination + Direction * Decay.Evaluate(elapsed).Value;
+            return corrected.IsFinite ? corrected : destination;
         }
     }
 
@@ -129,6 +130,8 @@ namespace SA.Motion.Inertialization
             return result;
         }
 
+        static Float3 PositiveOr(Float3 scale, Float3 fallback) => scale.IsPositive ? scale : fallback;
+
         public static Pose Apply(ref PoseTransition transition, in Pose destination, float elapsed)
         {
             if (!destination.Scale.IsPositive)
@@ -139,7 +142,7 @@ namespace SA.Motion.Inertialization
                 Position = transition.Position.Apply(destination.Position, elapsed),
                 Rotation = transition.Rotation.Apply(destination.Rotation, elapsed),
                 Scale = destination.Scale.IsPositive && transition.LogScale.Decay.Duration > 0f && !scaleFinished
-                    ? Float3.Exp(transition.LogScale.Apply(Float3.Log(destination.Scale), elapsed)) : destination.Scale
+                    ? PositiveOr(Float3.Exp(transition.LogScale.Apply(Float3.Log(destination.Scale), elapsed)), destination.Scale) : destination.Scale
             };
         }
     }
