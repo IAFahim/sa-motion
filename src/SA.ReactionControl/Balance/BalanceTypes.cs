@@ -114,7 +114,7 @@ namespace SA.ReactionControl.Balance
             StepOffset = 0.05f,
             StepLead = 0.2f,
             SwingLeadGain = 0.1f,
-            SupportInsideMargin = 0.02f,
+            SupportInsideMargin = -0.18f,
             WideStanceRelease = 0.05f,
             MinLeadDistance = 0.07f,
             YawHalfSpan = 0.15f,

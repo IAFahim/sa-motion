@@ -20,14 +20,16 @@ namespace SA.ReactionControl.Balance
             if (!(halfLength > 0f))
                 halfLength = 0.16f;
             var point = BalanceMath.Sanitize(predicted);
+            var leftPosition = BalanceMath.Sanitize(leftFoot.Position);
+            var rightPosition = BalanceMath.Sanitize(rightFoot.Position);
             var leftSide = BalanceMath.AxisX(leftFoot);
             var leftForward = BalanceMath.AxisZ(leftFoot);
             var rightSide = BalanceMath.AxisX(rightFoot);
             var rightForward = BalanceMath.AxisZ(rightFoot);
-            var c0 = leftFoot.Position - leftForward * halfLength - leftSide * halfWidth;
-            var c1 = rightFoot.Position - rightForward * halfLength + rightSide * halfWidth;
-            var c2 = rightFoot.Position + rightForward * halfLength + rightSide * halfWidth;
-            var c3 = leftFoot.Position + leftForward * halfLength - leftSide * halfWidth;
+            var c0 = leftPosition - leftForward * halfLength - leftSide * halfWidth;
+            var c1 = rightPosition - rightForward * halfLength + rightSide * halfWidth;
+            var c2 = rightPosition + rightForward * halfLength + rightSide * halfWidth;
+            var c3 = leftPosition + leftForward * halfLength - leftSide * halfWidth;
             var n0 = EdgeNormal(c1 - c0, axis);
             var n1 = EdgeNormal(c2 - c1, axis);
             var n2 = EdgeNormal(c3 - c2, axis);
@@ -45,7 +47,9 @@ namespace SA.ReactionControl.Balance
                 distance = c;
             if (e < distance)
                 distance = e;
-            var mean = (leftFoot.Position + rightFoot.Position) * 0.5f;
+            if (!Scalar.IsFinite(distance))
+                distance = 0f;
+            var mean = (leftPosition + rightPosition) * 0.5f;
             var projected = axis * Float3.Dot(axis, mean - point) + point;
             if (!(distance < 0f))
             {

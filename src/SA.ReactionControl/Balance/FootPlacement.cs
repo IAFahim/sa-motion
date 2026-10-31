@@ -18,11 +18,14 @@ namespace SA.ReactionControl.Balance
             var forward = BalanceMath.NormalizeOrZero(pelvisForward - axis * along, 1e-6f);
             var side = Float3.Cross(forward, axis);
             var pelvisSide = BalanceMath.AxisX(pelvis);
-            var centre = pelvis.Position
-                + side * Float3.Dot(axis, pelvisSide) * p.ReachBias
-                + forward * along * p.ReachBias;
+            var pelvisPosition = BalanceMath.Sanitize(pelvis.Position);
+            var bias = Scalar.IsFinite(p.ReachBias) ? p.ReachBias : 0f;
+            var centre = pelvisPosition
+                + side * Float3.Dot(axis, pelvisSide) * bias
+                + forward * along * bias;
             centre = BalanceMath.SetHeight(centre, axis, Float3.Dot(clean, axis));
             var relative = clean - centre;
+            var epsilon = Scalar.IsFinite(p.Epsilon) && p.Epsilon > 0f ? p.Epsilon : 1e-6f;
             var forwardScale = first * p.ReachForwardScale;
             var lateralScale = second * p.ReachLateralScale;
             float scale;
@@ -41,8 +44,8 @@ namespace SA.ReactionControl.Balance
                 else
                 {
                     var radius = (float)System.Math.Sqrt(x * x + y * y);
-                    scale = 1f / (radius + p.Epsilon);
-                    if (scale > 1f)
+                    scale = 1f / (radius + epsilon);
+                    if (scale > 1f || !Scalar.IsFinite(scale))
                         scale = 1f;
                 }
             }
@@ -65,19 +68,22 @@ namespace SA.ReactionControl.Balance
             out float lean2)
         {
             var clean = BalanceMath.Sanitize(target);
-            var direction = BalanceMath.ToLocal(hip.Frame, clean - hip.Position);
+            var origin = BalanceMath.Sanitize(hip.Position);
+            var mid1 = Scalar.IsFinite(hip.MidLean1) ? hip.MidLean1 : 0f;
+            var mid2 = Scalar.IsFinite(hip.MidLean2) ? hip.MidLean2 : 0f;
+            var direction = BalanceMath.ToLocal(hip.Frame, clean - origin);
             var unit = BalanceMath.NormalizeOrZero(direction, 1e-6f);
             var tilt = BalanceMath.Acos(BalanceMath.Clamp(unit.Z, -1f, 1f));
             var radius = (float)System.Math.Sqrt(unit.X * unit.X + unit.Y * unit.Y);
             var gain = 1f / (radius + 1e-6f);
             if (!Scalar.IsFinite(side))
                 side = 1f;
-            lean1 = unit.X * gain * tilt + hip.MidLean1;
-            lean2 = unit.Y * gain * tilt * side + hip.MidLean2;
+            lean1 = unit.X * gain * tilt + mid1;
+            lean2 = unit.Y * gain * tilt * side + mid2;
             if (!Scalar.IsFinite(lean1))
-                lean1 = hip.MidLean1;
+                lean1 = mid1;
             if (!Scalar.IsFinite(lean2))
-                lean2 = hip.MidLean2;
+                lean2 = mid2;
         }
 
         public static float HipRoom(in BalanceJoint3 hip, float used1, float used2, float start1, float start2, float epsilon)

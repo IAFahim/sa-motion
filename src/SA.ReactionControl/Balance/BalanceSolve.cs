@@ -25,8 +25,6 @@ namespace SA.ReactionControl.Balance
                 up = up / up.Length;
             var hipShift = Scalar.IsFinite(pv.HipShift) ? BalanceMath.Clamp(pv.HipShift, -1f, 1f) : 0f;
             var anklePitch = Scalar.IsFinite(pv.AnklePitch) ? BalanceMath.Clamp(pv.AnklePitch, -1f, 1f) : 0f;
-            var lift = Scalar.IsFinite(pv.Lift) ? pv.Lift : 0f;
-            var leanAccum = Scalar.IsFinite(pv.LeanAccumulator) ? pv.LeanAccumulator : 0f;
             var yawLeft = Scalar.IsFinite(pv.YawLeft) ? pv.YawLeft : 0f;
             var yawRight = Scalar.IsFinite(pv.YawRight) ? pv.YawRight : 0f;
             var pelvisHeight = Scalar.IsFinite(p.PelvisHeight) && p.PelvisHeight > 0f ? p.PelvisHeight : 0.95f;
@@ -55,52 +53,20 @@ namespace SA.ReactionControl.Balance
             var targetRight = t1;
             var normalLeft = BalanceMath.Sanitize(s.SupportLeft.Normal);
             var normalRight = BalanceMath.Sanitize(s.SupportRight.Normal);
-            if (f.LeftPlanted || f.RightPlanted)
+            if (f.LeftPlanted)
             {
-                var sideAxis = BalanceMath.NormalizeOrZero(Float3.Cross(BalanceMath.AxisZ(s.Pelvis.Frame), up), 1e-6f);
-                var forwardAxis = Float3.Cross(up, sideAxis);
-                var cosAcc = (float)Math.Cos(-leanAccum);
-                var sinAcc = (float)Math.Sin(-leanAccum);
-                var cosShift = (float)Math.Cos(-hipShift);
-                var sinShift = (float)Math.Sin(-hipShift);
-                var e0 = new Float3(cosShift * cosAcc, sinShift * cosAcc, -sinAcc);
-                var e1 = new Float3(-sinShift, cosShift, 0f);
-                var e2 = new Float3(cosShift * sinAcc, sinShift * sinAcc, cosAcc);
-                var spin = BalanceMath.RotVecToQuat(BalanceMath.Sanitize(s.Pelvis.AngularVelocity) * -p.YawPredictHorizon);
-                BalanceMath.QuatRows(spin, out var qx, out var qy, out var qz);
-                var pd0 = PackBasis(e0, forwardAxis, sideAxis, up, qx, qy, qz);
-                var pd1 = PackBasis(e1, forwardAxis, sideAxis, up, qx, qy, qz);
-                var pd2 = PackBasis(e2, forwardAxis, sideAxis, up, qx, qy, qz);
-                var pelvisPosition = s.Pelvis.Frame.Position + BalanceMath.Sanitize(pv.Offset) + up * lift;
-                var pelvisRotation = BalanceMath.SanitizeRotation(s.Pelvis.Frame.Rotation);
-                var pelvisX = Quaternion.Rotate(pelvisRotation, new Float3(1f, 0f, 0f));
-                var pelvisY = Quaternion.Rotate(pelvisRotation, new Float3(0f, 1f, 0f));
-                var pelvisZ = Quaternion.Rotate(pelvisRotation, new Float3(0f, 0f, 1f));
-                var cm0 = pelvisX * pd0.X + pelvisY * pd1.X + pelvisZ * pd2.X;
-                var cm1 = pelvisX * pd0.Y + pelvisY * pd1.Y + pelvisZ * pd2.Y;
-                var cm2 = pelvisX * pd0.Z + pelvisY * pd1.Z + pelvisZ * pd2.Z;
-                var cd = pelvisPosition
-                    - pelvisX * Float3.Dot(pd0, pelvisPosition)
-                    - pelvisY * Float3.Dot(pd1, pelvisPosition)
-                    - pelvisZ * Float3.Dot(pd2, pelvisPosition);
-                var pdm = new Frame(pelvisPosition, pelvisRotation);
-                if (f.LeftPlanted)
-                {
-                    var placed = FootPlacement.Reach(t0, up, pdm, p.StepClamp * s.Left.Hip.HalfLean1, p.StepClamp * s.Left.Hip.HalfLean2, p);
-                    targetLeft = cm0 * placed.Position.X + cm1 * placed.Position.Y + cm2 * placed.Position.Z + cd;
-                    normalLeft = RotateByColumns(cm0, cm1, cm2, normalLeft);
-                }
-                if (f.RightPlanted)
-                {
-                    var placed = FootPlacement.Reach(t1, up, pdm, p.StepClamp * s.Right.Hip.HalfLean1, p.StepClamp * s.Right.Hip.HalfLean2, p);
-                    targetRight = cm0 * placed.Position.X + cm1 * placed.Position.Y + cm2 * placed.Position.Z + cd;
-                    normalRight = RotateByColumns(cm0, cm1, cm2, normalRight);
-                }
+                var placed = FootPlacement.Reach(t0, up, s.Pelvis.Frame, p.StepClamp * s.Left.Hip.HalfLean1, p.StepClamp * s.Left.Hip.HalfLean2, p);
+                targetLeft = placed.Position;
+            }
+            if (f.RightPlanted)
+            {
+                var placed = FootPlacement.Reach(t1, up, s.Pelvis.Frame, p.StepClamp * s.Right.Hip.HalfLean1, p.StepClamp * s.Right.Hip.HalfLean2, p);
+                targetRight = placed.Position;
             }
             SolveLeg(p, up, targetLeft, yawLeft, 1f, !f.LeftPlanted, p.HipStrength, p.HipDamping, ref s, true);
             SolveLeg(p, up, targetRight, yawRight, -1f, !f.RightPlanted, p.HipStrength, p.HipDamping, ref s, false);
             SolveAnkle(p, up, targetLeft, normalLeft, anklePitch + lean, yawLeft * 0.5f, f.LeftPlanted, p.AnkleStrength, p.AnkleDamping, ref s, true);
-            SolveAnkle(p, up, targetRight, normalRight, anklePitch - lean, yawRight * 0.5f, f.RightPlanted, p.AnkleStrength, p.AnkleDamping, ref s, false);
+            SolveAnkle(p, up, targetRight, normalRight, anklePitch - lean, yawRight * -0.5f, f.RightPlanted, p.AnkleStrength, p.AnkleDamping, ref s, false);
             RedistributeOverTravel(ref s);
             WriteDrives(p, s, drives);
         }
@@ -126,20 +92,6 @@ namespace SA.ReactionControl.Balance
             return pelvisHeight - (float)Math.Sqrt(remaining);
         }
 
-        static Float3 PackBasis(Float3 e, Float3 forward, Float3 side, Float3 up, Float3 qx, Float3 qy, Float3 qz)
-        {
-            var world = forward * e.Z + side * e.Y + up * e.X;
-            return new Float3(Float3.Dot(qx, world), Float3.Dot(qy, world), Float3.Dot(qz, world));
-        }
-
-        static Float3 RotateByColumns(Float3 cm0, Float3 cm1, Float3 cm2, Float3 normal)
-        {
-            var clean = BalanceMath.Sanitize(normal);
-            var col0 = new Float3(cm0.X, cm1.X, cm2.X);
-            var col1 = new Float3(cm0.Y, cm1.Y, cm2.Y);
-            var col2 = new Float3(cm0.Z, cm1.Z, cm2.Z);
-            return new Float3(Float3.Dot(col0, clean), Float3.Dot(col1, clean), Float3.Dot(col2, clean));
-        }
 
         static void SolveLeg(
             in BalanceParams p,
@@ -405,9 +357,9 @@ namespace SA.ReactionControl.Balance
             var scaled1 = lean1 / half1;
             var scaled2 = lean2 / half2;
             var radius = (float)Math.Sqrt(scaled1 * scaled1 + scaled2 * scaled2);
-            if (!(radius > 0f) || !Scalar.IsFinite(radius))
+            if (!(radius > 1f) || !Scalar.IsFinite(radius))
                 return 0f;
-            return (radius - 1f) / radius * lean2;
+            return (radius - 1f) / (radius + 1e-6f) * lean2;
         }
 
         static void RedistributeOverTravel(ref BalanceSnapshot s)
@@ -459,7 +411,7 @@ namespace SA.ReactionControl.Balance
             var ceiling = Scalar.IsFinite(p.MaxTorque) && p.MaxTorque > 0f ? p.MaxTorque : 0f;
             WriteLegDrives(p, s.Left, 1f, Role.ThighLeft, Role.ShinLeft, Role.FootLeft, ceiling, drives);
             WriteLegDrives(p, s.Right, -1f, Role.ThighRight, Role.ShinRight, Role.FootRight, ceiling, drives);
-            var spineLean = (Scalar.IsFinite(s.Spine.Desired.Y) ? s.Spine.Desired.Y : 0f) - s.Spine.MidLean2;
+            var spineLean = Scalar.IsFinite(s.Spine.Desired.Y) ? s.Spine.Desired.Y : 0f;
             var spineTarget = Quaternion.Multiply(
                 BalanceMath.SanitizeRotation(s.Spine.Frame.Rotation),
                 Quaternion.AxisAngle(new Float3(0f, 0f, 1f), spineLean));
@@ -477,26 +429,33 @@ namespace SA.ReactionControl.Balance
             Span<JointDrive> drives)
         {
             var clean = side >= 0f ? 1f : -1f;
-            var hipRelative = new Float3(
-                (Scalar.IsFinite(leg.Hip.Desired.X) ? leg.Hip.Desired.X : leg.Hip.MidLean1) - leg.Hip.MidLean1,
-                ((Scalar.IsFinite(leg.Hip.Desired.Y) ? leg.Hip.Desired.Y : leg.Hip.MidLean2) - leg.Hip.MidLean2) * clean,
-                ((Scalar.IsFinite(leg.Hip.Desired.Z) ? leg.Hip.Desired.Z : leg.Hip.MidTwist) - leg.Hip.MidTwist) * clean);
+            var desiredTwist = Scalar.IsFinite(leg.Hip.Desired.Z) ? leg.Hip.Desired.Z : 0f;
+            var desiredLean1 = Scalar.IsFinite(leg.Hip.Desired.X) ? leg.Hip.Desired.X : 0f;
+            var desiredLean2 = Scalar.IsFinite(leg.Hip.Desired.Y) ? leg.Hip.Desired.Y : 0f;
+            var actualTwist = Scalar.IsFinite(leg.Hip.Actual.Z) ? leg.Hip.Actual.Z : 0f;
+            var desiredHip = BalanceMath.JointRotation(desiredLean1, desiredLean2 * clean, desiredTwist * clean);
+            var actualHip = BalanceMath.JointRotation(0f, 0f, actualTwist * clean);
+            var hipCorrection = Quaternion.Multiply(desiredHip, Quaternion.InverseUnit(actualHip));
             var hipTarget = Quaternion.Multiply(
                 BalanceMath.SanitizeRotation(leg.Hip.Frame.Rotation),
-                BalanceMath.JointRotation(hipRelative.X, hipRelative.Y, hipRelative.Z));
+                Quaternion.Multiply(hipCorrection, Frames.Relative(leg.Hip.Frame, leg.Thigh.Frame).Rotation));
             drives[(int)hipRole] = MakeDrive(hipTarget, p.HipStrength, p.HipDamping, ceiling);
-            var kneeRelative = (Scalar.IsFinite(leg.Knee.Desired) ? leg.Knee.Desired : leg.Knee.Mid) - leg.Knee.Mid;
+            var desiredKnee = Scalar.IsFinite(leg.Knee.Desired) ? leg.Knee.Desired : 0f;
+            var actualKnee = Scalar.IsFinite(leg.Knee.Actual) ? leg.Knee.Actual : 0f;
             var kneeTarget = Quaternion.Multiply(
                 BalanceMath.SanitizeRotation(leg.Knee.Frame.Rotation),
-                Quaternion.AxisAngle(new Float3(1f, 0f, 0f), kneeRelative));
+                Quaternion.Multiply(
+                    Quaternion.AxisAngle(new Float3(1f, 0f, 0f), desiredKnee - actualKnee),
+                    Frames.Relative(leg.Knee.Frame, leg.Shin.Frame).Rotation));
             drives[(int)kneeRole] = MakeDrive(kneeTarget, p.KneeStrength, p.KneeDamping, ceiling);
-            var pitch = (Scalar.IsFinite(leg.Ankle.Desired.X) ? leg.Ankle.Desired.X : leg.Ankle.MidLean1) - leg.Ankle.MidLean1;
-            var yaw = (Scalar.IsFinite(leg.Ankle.Desired.Y) ? leg.Ankle.Desired.Y : leg.Ankle.MidLean2) - leg.Ankle.MidLean2;
+            var desiredPitch = Scalar.IsFinite(leg.Ankle.Desired.X) ? leg.Ankle.Desired.X : 0f;
+            var desiredYaw = Scalar.IsFinite(leg.Ankle.Desired.Y) ? leg.Ankle.Desired.Y : 0f;
+            var desiredAnkle = Quaternion.Multiply(
+                Quaternion.AxisAngle(new Float3(1f, 0f, 0f), desiredPitch),
+                Quaternion.AxisAngle(new Float3(0f, 1f, 0f), desiredYaw));
             var ankleTarget = Quaternion.Multiply(
                 BalanceMath.SanitizeRotation(leg.Ankle.Frame.Rotation),
-                Quaternion.Multiply(
-                    Quaternion.AxisAngle(new Float3(1f, 0f, 0f), pitch),
-                    Quaternion.AxisAngle(new Float3(0f, 1f, 0f), yaw)));
+                Quaternion.Multiply(desiredAnkle, Frames.Relative(leg.Ankle.Frame, leg.Foot.Frame).Rotation));
             drives[(int)ankleRole] = MakeDrive(ankleTarget, p.AnkleStrength, p.AnkleDamping, ceiling);
         }
 

@@ -46,17 +46,16 @@ namespace SA.ReactionControl.Balance
             s.AngularVelocity = BalanceMath.Sanitize(angular / mass);
             s.HorizontalVelocity = BalanceMath.Horizontal(s.Velocity, up);
             var pelvisBody = bodies[(int)Role.Pelvis];
-            var rootRotation = BalanceMath.SanitizeRotation(pelvisBody.Rotation);
+            var pelvisRotation = BalanceMath.SanitizeRotation(pelvisBody.Rotation);
+            var quarter = new SA.Motion.Numerics.Quaternion(0.7071068f, 0f, 0f, 0.7071068f);
+            var rootRotation = SA.Motion.Numerics.Quaternion.Normalize(SA.Motion.Numerics.Quaternion.Multiply(pelvisRotation, quarter));
             s.Root = new Frame(s.Com, rootRotation);
             s.Left = BuildLeg(p, bodies, true);
             s.Right = BuildLeg(p, bodies, false);
             s.Spine = BuildSpine(p, bodies);
-            var pelvisFrame = new Frame(
-                BalanceMath.Sanitize(pelvisBody.Position),
-                BalanceMath.SanitizeRotation(pelvisBody.Rotation));
             s.Pelvis = new BalancePart
             {
-                Frame = pelvisFrame,
+                Frame = new Frame(BalanceMath.Sanitize(pelvisBody.Position), pelvisRotation),
                 Velocity = BalanceMath.Sanitize(pelvisBody.LinearVelocity),
                 AngularVelocity = BalanceMath.Sanitize(pelvisBody.AngularVelocity)
             };
@@ -89,15 +88,20 @@ namespace SA.ReactionControl.Balance
             var thigh = bodies[(int)thighRole];
             var shin = bodies[(int)shinRole];
             var foot = bodies[(int)footRole];
-            var hipFrame = new Frame(
-                BalanceMath.Sanitize(thigh.Position),
-                BalanceMath.SanitizeRotation(thigh.Rotation));
-            var kneeFrame = new Frame(
-                BalanceMath.Sanitize(shin.Position),
-                BalanceMath.SanitizeRotation(shin.Rotation));
-            var ankleFrame = new Frame(
-                BalanceMath.Sanitize(foot.Position),
-                BalanceMath.SanitizeRotation(foot.Rotation));
+            var thighPosition = BalanceMath.Sanitize(thigh.Position);
+            var kneePosition = BalanceMath.Sanitize(shin.Position);
+            var anklePosition = BalanceMath.Sanitize(foot.Position);
+            var thighDirection = BalanceMath.NormalizeOrZero(kneePosition - thighPosition, 1e-6f);
+            if (!(thighDirection.Length > 0f))
+                thighDirection = new Float3(0f, -1f, 0f);
+            var shinDirection = BalanceMath.NormalizeOrZero(anklePosition - kneePosition, 1e-6f);
+            if (!(shinDirection.Length > 0f))
+                shinDirection = new Float3(0f, -1f, 0f);
+            var hipFrame = new Frame(thighPosition, BalanceMath.Arc(new Float3(0f, 0f, 1f), thighDirection, 1e-6f));
+            var kneeFrame = new Frame(kneePosition, BalanceMath.Arc(new Float3(0f, 0f, 1f), shinDirection, 1e-6f));
+            var ankleFrame = new Frame(anklePosition, BalanceMath.SanitizeRotation(foot.Rotation));
+            var thighFrame = new Frame(thighPosition, BalanceMath.SanitizeRotation(thigh.Rotation));
+            var shinFrame = new Frame(kneePosition, BalanceMath.SanitizeRotation(shin.Rotation));
             var limb = Frames.Relative(hipFrame, kneeFrame);
             var leg = new BalanceLeg
             {
@@ -110,11 +114,12 @@ namespace SA.ReactionControl.Balance
                     HalfLean2 = p.HipHalfLean2,
                     MidTwist = p.HipMidTwist,
                     MidLean1 = p.HipMidLean1,
-                    MidLean2 = p.HipMidLean2
+                    MidLean2 = p.HipMidLean2,
+                    Actual = new Float3(0f, 0f, HipTwist(hipFrame, thighFrame))
                 },
                 Thigh = new BalancePart
                 {
-                    Frame = hipFrame,
+                    Frame = thighFrame,
                     Velocity = BalanceMath.Sanitize(thigh.LinearVelocity),
                     AngularVelocity = BalanceMath.Sanitize(thigh.AngularVelocity)
                 },
@@ -124,11 +129,12 @@ namespace SA.ReactionControl.Balance
                     ChildFrame = kneeFrame,
                     Position = kneeFrame.Position,
                     HalfRange = p.KneeHalfRange,
-                    Mid = p.KneeMid
+                    Mid = p.KneeMid,
+                    Actual = KneeFlexion(thighDirection, shinDirection)
                 },
                 Shin = new BalancePart
                 {
-                    Frame = kneeFrame,
+                    Frame = shinFrame,
                     Velocity = BalanceMath.Sanitize(shin.LinearVelocity),
                     AngularVelocity = BalanceMath.Sanitize(shin.AngularVelocity)
                 },
@@ -141,7 +147,8 @@ namespace SA.ReactionControl.Balance
                     HalfLean2 = p.AnkleHalfYaw,
                     MidTwist = 0f,
                     MidLean1 = p.AnkleMidPitch,
-                    MidLean2 = p.AnkleMidYaw
+                    MidLean2 = p.AnkleMidYaw,
+                    Actual = Float3.Zero
                 },
                 Foot = new BalancePart
                 {
@@ -150,10 +157,24 @@ namespace SA.ReactionControl.Balance
                     AngularVelocity = BalanceMath.Sanitize(foot.AngularVelocity)
                 },
                 Limb = limb,
-                ThighLength = BalanceMath.SegmentLength(hipFrame.Position, kneeFrame.Position),
-                ShinLength = BalanceMath.SegmentLength(kneeFrame.Position, ankleFrame.Position)
+                ThighLength = BalanceMath.SegmentLength(thighPosition, kneePosition),
+                ShinLength = BalanceMath.SegmentLength(kneePosition, anklePosition)
             };
             return leg;
+        }
+
+        static float HipTwist(Frame hip, Frame thigh)
+        {
+            BalanceMath.SplitRotation(Frames.Relative(hip, thigh).Rotation, out _, out _, out var twist);
+            if (!Scalar.IsFinite(twist))
+                return 0f;
+            return twist;
+        }
+
+        static float KneeFlexion(Float3 thighDirection, Float3 shinDirection)
+        {
+            var cosine = BalanceMath.Clamp(Float3.Dot(thighDirection, shinDirection), -1f, 1f);
+            return -BalanceMath.Acos(cosine);
         }
 
         static BalanceJoint3 BuildSpine(in BalanceParams p, ReadOnlySpan<RoleBody> bodies)
