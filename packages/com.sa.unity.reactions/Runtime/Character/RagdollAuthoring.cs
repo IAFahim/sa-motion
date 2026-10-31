@@ -13,6 +13,7 @@ namespace SA.Reactions
         public float MaxStrength = 1f;
         public float RecoverSeconds = 1.2f;
         public float LimpSeconds = 4f;
+        public float BlendSeconds = 0.7f;
         public float LimpImpulse = 260f;
         public float StrengthLossPerImpulse = 0.004f;
         public Transform[] Overrides = new Transform[15];

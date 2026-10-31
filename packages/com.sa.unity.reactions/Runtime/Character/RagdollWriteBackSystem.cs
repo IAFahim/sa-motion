@@ -13,15 +13,16 @@ namespace SA.Reactions
         public void OnUpdate(ref SystemState state)
         {
             var manager = state.EntityManager;
+            var dt = SystemAPI.Time.DeltaTime;
             using var rigs = new NativeList<Entity>(Allocator.Temp);
             foreach (var (ragdoll, entity) in SystemAPI.Query<RefRO<Ragdoll>>().WithEntityAccess())
-                if (ragdoll.ValueRO.Spawned == 1)
+                if (ragdoll.ValueRO.Spawned == 1 && ragdoll.ValueRO.BlendLeft <= 0f)
                     rigs.Add(entity);
             foreach (var rig in rigs)
-                WriteBack(manager, rig);
+                WriteBack(manager, rig, dt);
         }
 
-        static void WriteBack(EntityManager manager, Entity rig)
+        static void WriteBack(EntityManager manager, Entity rig, float dt)
         {
             var skeleton = manager.GetComponentData<Rig>(rig).Value;
             if (!skeleton.IsCreated)
@@ -79,6 +80,22 @@ namespace SA.Reactions
                 else
                     worldRotation[b] = math.mul(parentRotation, local.Rotation);
                 worldPosition[b] = parentPosition + math.rotate(parentRotation, local.Position);
+            }
+            Observe(manager, rig, bones, dt);
+        }
+
+        static void Observe(EntityManager manager, Entity rig, NativeArray<BoneEntity> bones, float dt)
+        {
+            if (!manager.HasBuffer<BoneTransition>(rig))
+                return;
+            var transitions = manager.GetBuffer<BoneTransition>(rig);
+            var count = math.min(bones.Length, transitions.Length);
+            for (var b = 0; b < count; b++)
+            {
+                var local = manager.GetComponentData<LocalTransform>(bones[b].Value);
+                var bone = transitions[b];
+                Inertial.Observe(ref bone, new BonePose { Position = local.Position, Rotation = local.Rotation, Scale = local.Scale }, dt);
+                transitions[b] = bone;
             }
         }
     }

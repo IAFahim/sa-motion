@@ -18,6 +18,8 @@ namespace SA.Reactions
         public float LimpTone;
         public float StrengthLossPerImpulse;
         public float StandHeight;
+        public float BlendSeconds;
+        public float BlendLeft;
         public byte Spawned;
         public byte JointMode;
     }

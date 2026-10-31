@@ -30,6 +30,7 @@ namespace SA.Reactions.Editor
                 JointMode = (byte)authoring.JointMode,
                 RecoverRate = 1f / math.max(0.1f, authoring.RecoverSeconds),
                 LimpSeconds = authoring.LimpSeconds,
+                BlendSeconds = authoring.BlendSeconds,
                 LimpImpulse = authoring.LimpImpulse,
                 LimpTone = authoring.LimpTone,
                 StrengthLossPerImpulse = authoring.StrengthLossPerImpulse

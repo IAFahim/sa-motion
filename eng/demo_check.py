@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 
 project = Path("/home/i/ruk2")
-scene = "Assets/ReactionsDemo/ReactionsDemo.unity"
+scene = sys.argv[2] if len(sys.argv) > 2 else "Assets/ReactionsDemo/ReactionsDemo.unity"
 telemetry = project / "Temp/sa/demo_telemetry.csv"
 
 
@@ -15,13 +15,16 @@ def unity(*args, timeout=120):
 
 unity("scene", "open", "--path", scene)
 telemetry.unlink(missing_ok=True)
+stop_after = project / "Temp/sa/demo_stop_after.txt"
+stop_after.parent.mkdir(parents=True, exist_ok=True)
+stop_after.write_text(sys.argv[1] if len(sys.argv) > 1 else "30")
 unity("editor.playmode", "start")
-time.sleep(float(sys.argv[1]) if len(sys.argv) > 1 else 34)
-unity("editor.playmode", "stop")
-for _ in range(20):
+for _ in range(480):
     if telemetry.exists():
         break
     time.sleep(0.5)
+stop_after.unlink(missing_ok=True)
+unity("editor.playmode", "stop")
 rows = [{k: (float(v) if k not in ("mode", "event") else v) for k, v in row.items()} for row in csv.DictReader(telemetry.open())]
 if not rows:
     print("no telemetry rows")
@@ -34,7 +37,8 @@ def window(low, high):
 
 checks = []
 standing = window(2.5, 4.8)
-checks.append(("stands before the first hit", bool(standing) and all(0.9 < r["pelvis_y"] < 1.08 for r in standing)))
+height = sorted(r["pelvis_y"] for r in standing)[len(standing) // 2] if standing else 0.0
+checks.append((f"stands before the first hit (pelvis {height:.2f} m)", 0.6 < height < 1.2 and all(abs(r["pelvis_y"] - height) < 0.08 for r in standing)))
 shove = window(5.0, 6.5)
 baseline = sum(r["head_x"] for r in standing) / len(standing), sum(r["head_z"] for r in standing) / len(standing)
 deflection = max(((r["head_x"] - baseline[0]) ** 2 + (r["head_z"] - baseline[1]) ** 2) ** 0.5 for r in shove) if shove else 0
@@ -43,9 +47,12 @@ checks.append(("strength dips after a shove", bool(shove) and min(r["strength"] 
 checks.append(("no explosion", all(abs(r["pelvis_y"]) < 3 and abs(r["head_y"]) < 3 for r in rows)))
 down = window(21.0, 23.5)
 checks.append(("knockdown goes limp", any(r["mode"] == "Limp" for r in down)))
-checks.append(("knockdown puts the pelvis on the floor", bool(down) and min(r["pelvis_y"] for r in down) < 0.35))
+checks.append(("knockdown puts the pelvis on the floor", bool(down) and min(r["pelvis_y"] for r in down) < 0.4 * height))
 after = window(26.0, 27.5)
-checks.append(("recovers to standing", bool(after) and all(0.9 < r["pelvis_y"] < 1.08 for r in after)))
+checks.append(("recovers to standing", bool(after) and all(abs(r["pelvis_y"] - height) < 0.1 for r in after)))
+blending = [r for r in rows if r["blend"] > 0]
+pop = max((r["jump"] for r in blending[:2]), default=999.0)
+checks.append((f"recovery is inertialized, no pop ({pop:.1f} deg in one frame)", bool(blending) and pop < 15.0))
 failed = [name for name, ok in checks if not ok]
 for name, ok in checks:
     print(("pass " if ok else "FAIL ") + name)

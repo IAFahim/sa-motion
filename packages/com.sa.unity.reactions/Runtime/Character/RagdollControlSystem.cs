@@ -37,6 +37,7 @@ namespace SA.Reactions
                 if (ragdoll.Timer >= ragdoll.LimpSeconds)
                 {
                     ResetToAnimation(manager, rig, bodies);
+                    BeginBlend(manager, rig, ref ragdoll);
                     ragdoll.Mode = RagdollMode.Tracking;
                     ragdoll.Timer = 0f;
                     ragdoll.Strength = ResetStrength;
@@ -44,6 +45,7 @@ namespace SA.Reactions
             }
             else
                 ragdoll.Strength = math.min(ragdoll.MaxStrength, ragdoll.Strength + ragdoll.RecoverRate * dt);
+            ragdoll.BlendLeft = math.max(0f, ragdoll.BlendLeft - dt);
             manager.SetComponentData(rig, ragdoll);
             var balanced = ragdoll.Mode == RagdollMode.Tracking && manager.HasComponent<BalanceControl>(rig) && manager.GetComponentData<BalanceControl>(rig).Enabled != 0 && manager.GetComponentData<BalanceControl>(rig).Ready != 0;
             var tone = ragdoll.Mode == RagdollMode.Limp ? ragdoll.LimpTone : ragdoll.Strength;
@@ -123,6 +125,17 @@ namespace SA.Reactions
                 drive.MaxTorque = spec.MaxTorque * tone;
                 manager.SetComponentData(body, drive);
             }
+        }
+
+        static void BeginBlend(EntityManager manager, Entity rig, ref Ragdoll ragdoll)
+        {
+            if (!manager.HasComponent<TransitionIntent>(rig) || ragdoll.BlendSeconds <= 0f)
+                return;
+            var intent = manager.GetComponentData<TransitionIntent>(rig);
+            intent.Pending = true;
+            intent.Seconds = ragdoll.BlendSeconds;
+            manager.SetComponentData(rig, intent);
+            ragdoll.BlendLeft = ragdoll.BlendSeconds;
         }
 
         static void ResetToAnimation(EntityManager manager, Entity rig, NativeArray<RagdollBody> bodies)

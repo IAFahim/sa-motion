@@ -79,7 +79,7 @@ unity command --result-only [--timeout <seconds>] <group> <name> [--arg value ..
 
 1. **Compile and test.** `eng/unity.sh compile` (about 5 minutes, exit 0 on success), then `eng/unity.sh test SA.Reactions.Tests`. Assemblies are listed in `eng/unity-test-assemblies.txt`.
 2. **Change any asset or setting in the Editor.** Write a `.cs` file under `$CLAUDE_JOB_DIR/tmp` or `/tmp`, never inside the Unity project, and run `eng/unity.sh eval <file>`. Example: the Humanoid import of the Quaternius libraries set `ModelImporter.animationType = Human`, `avatarSetup = CreateFromThisModel`, `motionNodeName = "root"`, then `SaveAndReimport()` and returned the avatar validity as the string.
-3. **Measure a running simulation.** Eval cannot watch Play mode. Have the Play-mode script write a CSV to `Temp/sa/`, then run `scene open`, `editor.playmode start`, sleep, `editor.playmode stop`, and read the file. `eng/demo_check.py` is the template: it prints seven pass/fail lines from `Temp/sa/demo_telemetry.csv`.
+3. **Measure a running simulation.** Eval cannot watch Play mode. Have the Play-mode script write a CSV to `Temp/sa/`, then run `scene open`, `editor.playmode start`, wait, `editor.playmode stop`, and read the file. `eng/demo_check.py <game_seconds> [scene]` is the template: it makes the demo stop itself at a game-time target (a file `Temp/sa/demo_stop_after.txt`, because wall time lies when the Editor is throttled), then prints eight pass/fail lines from `Temp/sa/demo_telemetry.csv`.
 4. **Show the owner.** Start with `SA_UNITY_WINDOW=1`, open the scene in Edit mode, tell them to press Play. Do not stop their Editor.
 5. **Debug output.** `Debug.Log` from eval rarely arrives. Write files under `Temp/sa/` and read them. Use `console get --tail 50` for compile errors.
 
@@ -89,7 +89,7 @@ unity command --result-only [--timeout <seconds>] <group> <name> [--arg value ..
 - Baker changes do not re-bake an existing prefab or subscene until a value on the prefab changes.
 - Bakers write only their own entity. Other entities need a `[TemporaryBakingType]` buffer and a baking system.
 - Enter Play from the main scene, never with the subscene open on its own. Wait about 30 seconds for streaming.
-- An unfocused Editor throttles Play mode to about one frame per second, so telemetry windows measured in seconds can lie. `editor set_auto_tick` and `editor.playmode set_run_in_background` exist. Neither is verified to fix it. `eng/demo_check.py` passed 7 of 7 against a headless Editor.
+- An unfocused Editor throttles Play mode (3 frames per second was measured, delta time clamps at 0.33 s), so wall-clock waits can lie. Wait on game time instead. `editor set_auto_tick` and `editor.playmode set_run_in_background` exist. Neither is verified to fix it.
 - After adding a project reference between .NET projects, delete the stale `tests/*/packages.lock.json` and run `eng/dotnet_test.sh` to regenerate it. A stale NuGet lock file gave restore errors.
 - If a Unity test passes only after you touch a Runtime file, suspect a stale build. Recompile and rerun before believing either result.
 - Do not edit `Packages/com.rukhanka.animation`. It is a third-party reference.
@@ -106,16 +106,23 @@ Dated 2026-10-31. Numbers come from runs on this machine unless marked not measu
 | Portable libraries (`src/`) | Motion 159, Humanoid 73, ReactionControl 110, Harness 14 tests, all passing at `cbc0bb0`. Balance and Evaluation tests were added after |
 | Unity packages | `SA.Tests`, `SA.Motion.Unity.Tests`, `SA.Reactions.Tests` passing. Reactions has 17 tests |
 | Inertialized transitions (CPU) | Verified live on Kyle, with a test that the switch frame does not pop (`TransitionTests`) |
-| Physical-animation ragdoll demo | `eng/verify.sh --demo` passed 15 of 15 and `eng/demo_check.py` 7 of 7: stands, light shove deflects the head, strength dips, no explosion, knockdown goes limp and reaches the floor, recovers |
+| Physical-animation ragdoll demo | `eng/verify.sh --demo` passed all 21 steps and `eng/demo_check.py` 8 of 8: stands, light shove deflects the head, strength dips, no explosion, knockdown goes limp and reaches the floor, recovers, and recovery is inertialized |
+| Ragdoll recovery by inertialization (Gears of War style) | The write-back system feeds the displayed ragdoll pose into each bone's inertial history. On recovery the control system starts a `TransitionIntent` of `RagdollAuthoring.BlendSeconds` (0.7) and write-back pauses until it ends. Largest one-frame bone rotation jump at the recovery frame: 87.3 degrees with `BlendSeconds = 0` (the old reset), 1.7 degrees with 0.7. Slow-motion captures show the fallen character rising smoothly. Requires `RigAuthoring.Inertialize = true` on the ragdoll prefab |
 | Balance controller race | Scored on one evaluator in the pure .NET harness. Best honest score 93 (tuned capture point). One entry scored 100 by holding still, which violates the 450 N-s rule |
 
 ### What is NOT working or NOT verified
 
 - **Balance and stepping do not hold in Unity Physics.** The capture-point controller (`SA.Balance`) scores 93 in the harness, but when wired into `BalanceControlSystem` the character still collapses. It is off by default (`RagdollAuthoring.BalanceController = false`). Suspects, in order: its assumed canonical frames (segment along local +Y, identity bind except feet), its hardcoded hip offset and leg lengths tuned on a 70 kg body, and torque drives applied at one rate where the harness used 480 Hz.
 - **The demo is physical animation, not balance.** Velocity tracking plus angular drives keep the pose. Recovery is a pose reset after `LimpSeconds`, not a get-up animation.
-- **Only one character (Kyle, generic rig) has been through the full path.** The Quaternius Universal Animation Library imports as a valid Humanoid avatar (both FBX, 43 clips each), but no ragdoll or SA rig was built from it yet. "Works with any body type" is a claim, not a result.
+- **Only one character (Kyle, generic rig) renders correctly.** The Quaternius Universal Animation Library mannequin imports as a valid Humanoid avatar (43 clips per FBX). Its SA rig bakes, its ragdoll stands, takes hits, goes limp and recovers (`eng/demo_check.py 30 Assets/ReactionsDemoUAL.unity` passed 6 of 7; the failing check was a head-deflection threshold of 0.05 m against 0.03 m). But it renders as a static T-pose: the mesh has two materials, Entities Graphics bakes one render entity per material, and `SkinBindingBakingSystem` in `com.sa.unity` puts `Skin` on the primary entity only, so no render entity got `Skin`. Fix in the baker: add `Skin` and `SkinBinding` to every render entity of a multi-material skin. Not done. "Works with any body type" is a claim, not a result.
 - Not measured: crowd or frame-time cost of the ragdoll, GPU inertialization, wall and ground contact reactions in the demo, a Windows or Mac run.
 - R2 (the Delirium-port balance tick) never stood. It stays on `origin/integrate/r2`, red on purpose.
+
+### Demo traps that made it look broken
+
+- The Showcase sample's `ShowcaseSystem` and `HeadLookSystem` (in `Assets/SA Demo/Scripts`) run on every rig in the world. They blend Kyle's clip names and fade out anything else, which erased every clip state on a different character. `ReactionsDemo` now disables both at start (`DisabledSystems`).
+- The default directional light faced the camera side of the characters, so they rendered as black silhouettes. The builder now sets the light rotation to (48, 155, 0). If a character looks black, check the light before the shader.
+- The on-screen labels said which side is the ragdoll. The ragdoll is at x = -1, which the camera shows on the right.
 
 ### Unity Physics facts that cost hours
 
