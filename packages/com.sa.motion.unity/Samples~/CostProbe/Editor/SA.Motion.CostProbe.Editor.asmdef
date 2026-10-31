@@ -1,0 +1,11 @@
+{
+  "name": "SA.Motion.CostProbe.Editor",
+  "references": ["SA.Motion.Unity", "Unity.Burst", "Unity.Collections", "Unity.Mathematics"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": true,
+  "overrideReferences": true,
+  "precompiledReferences": ["SA.Motion.dll"],
+  "autoReferenced": false,
+  "noEngineReferences": false
+}
