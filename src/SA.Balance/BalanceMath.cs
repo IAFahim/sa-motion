@@ -88,7 +88,15 @@ namespace SA.Balance
             q.MaxReach = PositiveOr(q.MaxReach, standard.MaxReach);
             q.FallSpeed = PositiveOr(q.FallSpeed, standard.FallSpeed);
             q.FallReach = PositiveOr(q.FallReach, standard.FallReach);
-            q.StanceBoost = PositiveOr(q.StanceBoost, standard.StanceBoost);
+            q.ChainPhase = SanitizeNumber(q.ChainPhase, standard.ChainPhase);
+            if (!(q.ChainPhase > 0f))
+            {
+                q.ChainPhase = standard.ChainPhase;
+            }
+            if (q.ChainPhase > 1f)
+            {
+                q.ChainPhase = 1f;
+            }
             q.FallToneStiffness = NonNegativeOr(q.FallToneStiffness, standard.FallToneStiffness);
             q.FallToneDamping = NonNegativeOr(q.FallToneDamping, standard.FallToneDamping);
             q.FallToneTorque = NonNegativeOr(q.FallToneTorque, standard.FallToneTorque);

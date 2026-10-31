@@ -213,6 +213,8 @@ namespace SA.Balance
 
         static void UpdateSwing(ReadOnlySpan<BodyState> bodies, Float3 capture, Float3 support, Float3 velocity, float reach, float margin, float dt, BalanceParams q, ref BalanceState state)
         {
+            float twoStep = q.MaxReach + q.MaxReach + q.SupportRadius;
+            float limit = twoStep < q.FallReach ? twoStep : q.FallReach;
             if (state.SwingFoot == 0 || state.SwingFoot == 1)
             {
                 state.SwingTime += dt;
@@ -220,11 +222,33 @@ namespace SA.Balance
                 {
                     state.SwingFoot = -1;
                     state.SwingTime = 0f;
+                    return;
                 }
-                return;
+                else
+                {
+                    if (state.FallingLatched)
+                    {
+                        return;
+                    }
+                    if (reach > limit)
+                    {
+                        state.SwingFoot = -1;
+                        state.SwingTime = 0f;
+                        state.FallingLatched = true;
+                        return;
+                    }
+                    if (margin > q.StepMargin && reach > 1e-6f && state.SwingTime >= q.StepTime * q.ChainPhase && DistanceXZ(capture, state.SwingTo) > q.StepMargin + q.StepMargin)
+                    {
+                        BeginStep(bodies, capture, support, velocity, reach, 1 - state.SwingFoot, q, ref state);
+                    }
+                    return;
+                }
             }
-            state.SwingFoot = -1;
-            state.SwingTime = 0f;
+            else
+            {
+                state.SwingFoot = -1;
+                state.SwingTime = 0f;
+            }
             if (state.FallingLatched)
             {
                 return;
@@ -237,12 +261,21 @@ namespace SA.Balance
             {
                 return;
             }
-            float planarSpeed = (float)Math.Sqrt(velocity.X * velocity.X + velocity.Z * velocity.Z);
-            if (reach > q.FallReach || planarSpeed > q.FallSpeed)
+            if (reach > limit)
             {
                 state.FallingLatched = true;
                 return;
             }
+            BodyState left = SanitizeBody(bodies[(int)Role.FootLeft]);
+            BodyState right = SanitizeBody(bodies[(int)Role.FootRight]);
+            float nearLeft = DistanceXZ(capture, left.Position);
+            float nearRight = DistanceXZ(capture, right.Position);
+            int foot = nearLeft <= nearRight ? 0 : 1;
+            BeginStep(bodies, capture, support, velocity, reach, foot, q, ref state);
+        }
+
+        static void BeginStep(ReadOnlySpan<BodyState> bodies, Float3 capture, Float3 support, Float3 velocity, float reach, int foot, BalanceParams q, ref BalanceState state)
+        {
             Float3 direction = (capture - support) / reach;
             Float3 lead = new Float3(velocity.X, 0f, velocity.Z) * (q.StepTime * q.StepLead);
             Float3 goal = capture + lead + direction * q.StepMargin;
@@ -252,15 +285,11 @@ namespace SA.Balance
             {
                 goal = support + offset * (q.MaxReach / length);
             }
-            BodyState left = SanitizeBody(bodies[(int)Role.FootLeft]);
-            BodyState right = SanitizeBody(bodies[(int)Role.FootRight]);
-            float nearLeft = DistanceXZ(capture, left.Position);
-            float nearRight = DistanceXZ(capture, right.Position);
-            int foot = nearLeft <= nearRight ? 0 : 1;
-            state.SwingFoot = foot;
+            int chosen = foot == 0 ? 0 : 1;
+            BodyState stepping = chosen == 0 ? SanitizeBody(bodies[(int)Role.FootLeft]) : SanitizeBody(bodies[(int)Role.FootRight]);
+            state.SwingFoot = chosen;
             state.SwingTime = 0f;
-            BodyState chosen = foot == 0 ? left : right;
-            state.SwingFrom = new Float3(chosen.Position.X, 0f, chosen.Position.Z);
+            state.SwingFrom = new Float3(stepping.Position.X, 0f, stepping.Position.Z);
             state.SwingTo = new Float3(goal.X, 0f, goal.Z);
         }
 

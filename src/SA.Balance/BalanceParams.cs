@@ -54,6 +54,7 @@ namespace SA.Balance
         public float FallToneStiffness;
         public float FallToneDamping;
         public float FallToneTorque;
+        public float ChainPhase;
 
         public static BalanceParams Standard
         {
@@ -109,6 +110,7 @@ namespace SA.Balance
                 p.FallToneStiffness = 8f;
                 p.FallToneDamping = 0.8f;
                 p.FallToneTorque = 20f;
+                p.ChainPhase = 0.5f;
                 return p;
             }
         }
