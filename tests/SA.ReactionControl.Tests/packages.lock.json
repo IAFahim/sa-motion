@@ -93,6 +93,14 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
+      "sa.harness": {
+        "type": "Project",
+        "dependencies": {
+          "SA.Humanoid": "[1.0.0, )",
+          "SA.Motion": "[0.1.0, )",
+          "SA.ReactionControl": "[1.0.0, )"
+        }
+      },
       "sa.humanoid": {
         "type": "Project",
         "dependencies": {

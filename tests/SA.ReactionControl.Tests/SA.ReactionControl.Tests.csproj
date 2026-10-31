@@ -14,5 +14,6 @@
     <ProjectReference Include="../../src/SA.Motion/SA.Motion.csproj" />
     <ProjectReference Include="../../src/SA.Humanoid/SA.Humanoid.csproj" />
     <ProjectReference Include="../../src/SA.ReactionControl/SA.ReactionControl.csproj" />
+    <ProjectReference Include="../SA.Harness/SA.Harness.csproj" />
   </ItemGroup>
 </Project>
