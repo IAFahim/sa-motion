@@ -1,0 +1,14 @@
+{
+  "name": "SA.Motion.Unity.Tests",
+  "rootNamespace": "SA.Motion.Unity.Tests",
+  "references": ["SA.Motion.Unity", "Unity.Burst", "Unity.Collections", "Unity.Mathematics", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": true,
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll", "SA.Motion.dll"],
+  "autoReferenced": false,
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

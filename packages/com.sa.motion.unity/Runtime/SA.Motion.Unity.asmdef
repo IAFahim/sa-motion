@@ -1,0 +1,18 @@
+{
+  "name": "SA.Motion.Unity",
+  "rootNamespace": "SA.Motion.Unity",
+  "references": [
+    "Unity.Mathematics"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": true,
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "SA.Motion.dll"
+  ],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

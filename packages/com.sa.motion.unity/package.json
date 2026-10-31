@@ -1,0 +1,9 @@
+{
+  "name": "com.sa.motion.unity",
+  "version": "0.1.0",
+  "displayName": "SA Motion Unity Bridge",
+  "description": "Thin Unity bridge for the engine-independent SA.Motion managed assembly.",
+  "unity": "7000.0",
+  "license": "MIT",
+  "author": { "name": "SA" }
+}
