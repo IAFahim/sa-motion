@@ -237,7 +237,7 @@ namespace SA.Balance
                         state.FallingLatched = true;
                         return;
                     }
-                    if (margin > q.StepMargin && reach > 1e-6f && state.SwingTime >= q.StepTime * q.ChainPhase && DistanceXZ(capture, state.SwingTo) > q.StepMargin + q.StepMargin)
+                    if (margin > q.StepMargin && reach > 1e-6f && state.SwingTime >= q.StepTime * q.ChainPhase && DistanceXZ(capture, state.SwingTo) > q.StepMargin)
                     {
                         BeginStep(bodies, capture, support, velocity, reach, 1 - state.SwingFoot, q, ref state);
                     }

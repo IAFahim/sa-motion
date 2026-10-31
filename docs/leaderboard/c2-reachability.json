@@ -1,0 +1,65 @@
+{
+  "Name": "c2-reachability",
+  "StandPassed": true,
+  "StandPeakDisplacement": 0.044266745,
+  "StandPeakLean": 6.16367,
+  "Deterministic": true,
+  "Rows": [
+    {
+      "Impulse": 60,
+      "Recovered": 8,
+      "Fell": 0,
+      "WithSteps": 5,
+      "MeanRecoverySeconds": 1.0041668,
+      "MeanPeakDisplacement": 0.60174835,
+      "LatchedFalling": 0
+    },
+    {
+      "Impulse": 100,
+      "Recovered": 8,
+      "Fell": 0,
+      "WithSteps": 8,
+      "MeanRecoverySeconds": 2.1062503,
+      "MeanPeakDisplacement": 1.166133,
+      "LatchedFalling": 0
+    },
+    {
+      "Impulse": 150,
+      "Recovered": 8,
+      "Fell": 0,
+      "WithSteps": 8,
+      "MeanRecoverySeconds": 1.9000003,
+      "MeanPeakDisplacement": 1.3085144,
+      "LatchedFalling": 0
+    },
+    {
+      "Impulse": 200,
+      "Recovered": 8,
+      "Fell": 0,
+      "WithSteps": 8,
+      "MeanRecoverySeconds": 2.5333338,
+      "MeanPeakDisplacement": 1.8305526,
+      "LatchedFalling": 0
+    },
+    {
+      "Impulse": 300,
+      "Recovered": 8,
+      "Fell": 0,
+      "WithSteps": 8,
+      "MeanRecoverySeconds": 2.354167,
+      "MeanPeakDisplacement": 1.6220423,
+      "LatchedFalling": 0
+    },
+    {
+      "Impulse": 450,
+      "Recovered": 8,
+      "Fell": 0,
+      "WithSteps": 8,
+      "MeanRecoverySeconds": 1.9645836,
+      "MeanPeakDisplacement": 1.5347522,
+      "LatchedFalling": 0
+    }
+  ],
+  "Score": 100,
+  "Version": "1"
+}

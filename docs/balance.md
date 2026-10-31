@@ -21,8 +21,12 @@ plus half pelvis counter-roll from lateral capture error.
 When margin clears the step margin the nearer foot swings to capture plus
 margin plus velocity lead through two-bone leg inverse kinematics with a
 sine lift, replants at swing time, and repeats while margin stays high.
-Past fall reach the controller latches Falling, holds current orientations
-at low tone, and stops commanding steps.
+While the first step is landing, a second step with the other foot chains
+in as soon as capture has moved past the committed foothold, so recovery
+tracks a running center. The controller latches Falling only when capture
+distance clears both the tuned fall radius and the kinematic two-step
+reach of twice the max step length plus the support radius; it then holds
+current orientations at low tone and stops commanding steps.
 Inner gains copy the harness hold schedule.
 
 ## Parameters
@@ -64,9 +68,10 @@ Inner gains copy the harness hold schedule.
 | StepShinLength | 0.43 | Knee to ankle length from bind joints that solves the leg chain |
 | StepLead | 0.5 | Center velocity times swing time added to the step goal |
 | MaxReach | 0.6 | Step goal clamp that stays inside leg reach with a crouch |
-| FallReach | 1.5 | Capture distance past which no step sequence can catch the center |
-| FallSpeed | 2.35 | Center speed past which capture outruns any step within reach and time |
+| FallReach | 1.5 | Capture distance cap past which the controller gives up and latches Falling |
+| FallSpeed | 2.35 | Retained for compatibility; the latch no longer consults center speed |
 | StanceBoost | 1.5 | Stance leg stiffness multiplier that carries single support |
 | FallToneStiffness | 8 | Falling latch low tone that goes limp without snapping |
 | FallToneDamping | 0.8 | Falling latch damping that avoids oscillation at low tone |
 | FallToneTorque | 20 | Falling latch torque cap that stays soft on the ground |
+| ChainPhase | 0.5 | Fraction of swing after which a second step may chain while the first lands |
