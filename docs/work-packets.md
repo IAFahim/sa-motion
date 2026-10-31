@@ -69,6 +69,10 @@ Status: R10, H2, N12, N13, T1 and D1 are merged into main (green). R2 passed non
 | B1 to B9 | The balance race: nine independent MIT controllers scored by `tests/SA.Balance.Evaluation` (leaderboard in `docs/leaderboard.md`) | scoreboard on main | `src/SA.Balance.<Name>/` |
 | R9 | Assemble one reaction controller and tune it | R2b green, R10, H2 merged | `Controller/` |
 
+## Balance wave 2 (on top of the winning B1, scoreboard on main)
+
+B1 won the race (`capture-point`, 80 of 100, merged). R2, R2b and R2c (the port-based tick) are closed red and stay on their branches; R9 is retired. Second wave: C1 (auto-tune), C2 (larger pushes), C3 (arm and torso momentum). Leaderboard: `docs/leaderboard.md`.
+
 ## Wave 3: still blocked
 
 | ID | Task | Blocked by |
