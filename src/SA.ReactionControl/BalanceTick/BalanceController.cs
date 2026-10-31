@@ -170,8 +170,6 @@ namespace SA.ReactionControl.BalanceTick
                 state.Feet.FootRight = state.Feet.FootRight + up * correction;
             PelvisControl.Update(tick, snapshot, ref state.Pelvis, state.Feet.LeftPlanted, state.Feet.RightPlanted);
             BalanceSolve.Solve(tick, ref snapshot, ref state.Feet, ref state.Pelvis, drives);
-            FixKnee(snapshot.Left, Role.ShinLeft, drives);
-            FixKnee(snapshot.Right, Role.ShinRight, drives);
             state.Pelvis.Lift = Scalar.IsFinite(snapshot.HeightTarget) ? snapshot.HeightTarget : 0f;
             WritePelvis(bodies[(int)Role.Pelvis].Rotation, up, tick.MaxTorque, drives);
             WriteTorso(bodies[(int)Role.Torso].Rotation, snapshot.Spine.Desired.Y, up, tick.SpineStrength, tick.SpineDamping, tick.MaxTorque, drives);
@@ -276,24 +274,6 @@ namespace SA.ReactionControl.BalanceTick
                 Damping = damping,
                 MaxTorque = ceiling
             };
-        }
-        static void FixKnee(in BalanceLeg leg, Role kneeRole, Span<JointDrive> drives)
-        {
-            var desired = Scalar.IsFinite(leg.Knee.Desired) ? leg.Knee.Desired : 0f;
-            var actual = Scalar.IsFinite(leg.Knee.Actual) ? leg.Knee.Actual : 0f;
-            var error = desired - actual;
-            if (!Scalar.IsFinite(error))
-                return;
-            var frameRotation = BalanceMath.SanitizeRotation(leg.Knee.Frame.Rotation);
-            var relative = Frames.Relative(leg.Knee.Frame, leg.Shin.Frame).Rotation;
-            if (!relative.IsValidRotation)
-                return;
-            var target = Quaternion.Normalize(Quaternion.Multiply(frameRotation, Quaternion.Multiply(Quaternion.AxisAngle(new Float3(1f, 0f, 0f), -error), relative)));
-            if (!target.IsValidRotation)
-                return;
-            var drive = drives[(int)kneeRole];
-            drive.Target = target;
-            drives[(int)kneeRole] = drive;
         }
 
         static void ScaleKnee(in BalanceLeg leg, Role kneeRole, Span<JointDrive> drives)

@@ -445,7 +445,7 @@ namespace SA.ReactionControl.Balance
             var kneeTarget = Quaternion.Multiply(
                 BalanceMath.SanitizeRotation(leg.Knee.Frame.Rotation),
                 Quaternion.Multiply(
-                    Quaternion.AxisAngle(new Float3(1f, 0f, 0f), desiredKnee - actualKnee),
+                    Quaternion.AxisAngle(new Float3(1f, 0f, 0f), actualKnee - desiredKnee),
                     Frames.Relative(leg.Knee.Frame, leg.Shin.Frame).Rotation));
             drives[(int)kneeRole] = MakeDrive(kneeTarget, p.KneeStrength, p.KneeDamping, ceiling);
             var desiredPitch = Scalar.IsFinite(leg.Ankle.Desired.X) ? leg.Ankle.Desired.X : 0f;
