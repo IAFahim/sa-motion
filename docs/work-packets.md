@@ -31,14 +31,27 @@ Each packet has its own spec in `docs/packets/<ID>.md`. The spec is the whole ta
 | U3 | Humanoid baker (plan P2): `RagdollBaker` consuming N4 and N5, unparented proxies, shared blobs. | N4, N5, U2 | One Avatar humanoid and one generic humanoid bake. Subscene reload and two instances work. |
 | U4 | GPU inertialization (plan P4): mirror the specified math in HLSL. | U1 | Real GPU parity against the C# kernel on the same inputs. |
 
-## Wave 3: blocked
+## Wave R: controller port and harness (Gate L decided, see `docs/provenance.md`)
+
+Pure .NET, start all at once. Shared rules: `docs/packets/R-common.md`. The shared contract (`RoleBody`, `SupportProbe`, `JointDrive`) is fixed by the integrator.
+
+| ID | Task | Source (Delirium @ 8e4ad4e) | Owns |
+|---|---|---|---|
+| R1 | Balance core: support, foot placement, pelvis control, balance solve | `nmdbm.rs` 1-843 | `Balance/` |
+| R3 | Loss of balance and catch-fall decisions | `nmbb.rs` | `BodyBalance/` |
+| R4 | Catch fall: probes and arm response | `nmcf.rs` | `CatchFall/` |
+| R5 | Bracing against walls | `nmbr.rs` | `Brace/` |
+| R6 | Effectors, soft limits, drive conversion | `nmrs.rs` 396-721, `ragdoll.rs` 1589-1720 | `Drive/` |
+| R7 | Behavior coordination, locomotion drive | `nm.rs` 490-560 and 1295-1450, `locomotion_drive.rs` | `Coordination/` |
+| R8 | Get-up selection and root alignment | `getup.rs`, `ragdoll.rs` ~3076 | `GetUp/` |
+| H1 | Pure .NET articulated test harness (test support only) | none | `tests/SA.Harness*` |
+
+Second wave, after R1 and H1 merge: R2 (`nmdbm.rs` 843-1474, body adapter and tick), R9 (assemble all areas into one controller tick and tune it in H1), R10 (independent parameter profile and tuning log).
+
+## Wave 3: still blocked
 
 | ID | Task | Blocked by |
 |---|---|---|
-| X1 | `SA.ReactionControl`: balance, steps, bracing, recovery ported from Delirium | Gate L decision in `docs/provenance.md`. A human decision. Include which functions, which license and who approved it. |
-| X2 | Recovery animation content | Project-owned or licensed get-up clips. |
+| X2 | Recovery animation content | Project-owned or licensed get-up clips. R8 returns "no suitable clip" until then. |
 | X3 | Public IL2CPP or other platform claims | A player build on that platform. |
-
-## Decision pending for the owner
-
-Extract the existing SA pose algebra (`PoseAlgebra`, `Sampling`, `Evaluation`, `BlendSpace`, `Playback`, about 500 lines) into a portable library too, so the whole animation core moves between engines. These files mostly operate on spans but some take Entities blob and buffer types, so this is a small rewrite, not a copy. Not scheduled until the owner decides; the packets above do not depend on it.
+| X4 | Any release or distribution of `SA.ReactionControl` | Real legal advice; see `docs/provenance.md`. |
