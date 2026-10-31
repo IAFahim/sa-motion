@@ -22,7 +22,12 @@ namespace SA.Motion.Inertialization
             return new VectorOffset { Direction = direction, Decay = ScalarDecay.Create(magnitude, velocity, seconds) };
         }
 
-        public Float3 Apply(Float3 destination, float elapsed) => destination + Direction * Decay.Evaluate(elapsed).Value;
+        public Float3 Apply(Float3 destination, float elapsed)
+        {
+            if (Decay.Duration <= Scalar.DurationEpsilon || elapsed >= Decay.Duration)
+                return destination;
+            return destination + Direction * Decay.Evaluate(elapsed).Value;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -58,8 +63,12 @@ namespace SA.Motion.Inertialization
             return new RotationOffset { Axis = axis, Decay = ScalarDecay.Create(angle, velocity, seconds) };
         }
 
-        public Quaternion Apply(Quaternion destination, float elapsed) =>
-            Quaternion.Normalize(Quaternion.Multiply(Quaternion.AxisAngle(Axis, Decay.Evaluate(elapsed).Value), Quaternion.Normalize(destination)));
+        public Quaternion Apply(Quaternion destination, float elapsed)
+        {
+            if (Decay.Duration <= Scalar.DurationEpsilon || elapsed >= Decay.Duration)
+                return Quaternion.Normalize(destination);
+            return Quaternion.Normalize(Quaternion.Multiply(Quaternion.AxisAngle(Axis, Decay.Evaluate(elapsed).Value), Quaternion.Normalize(destination)));
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -124,11 +133,12 @@ namespace SA.Motion.Inertialization
         {
             if (!destination.Scale.IsPositive)
                 transition.LogScale = default;
+            var scaleFinished = transition.LogScale.Decay.Duration <= Scalar.DurationEpsilon || elapsed >= transition.LogScale.Decay.Duration;
             return new Pose
             {
                 Position = transition.Position.Apply(destination.Position, elapsed),
                 Rotation = transition.Rotation.Apply(destination.Rotation, elapsed),
-                Scale = destination.Scale.IsPositive && transition.LogScale.Decay.Duration > 0f
+                Scale = destination.Scale.IsPositive && transition.LogScale.Decay.Duration > 0f && !scaleFinished
                     ? Float3.Exp(transition.LogScale.Apply(Float3.Log(destination.Scale), elapsed)) : destination.Scale
             };
         }
