@@ -7,7 +7,9 @@ reachable() { unity command --result-only console get --tail 1 >/dev/null 2>&1; 
 cd "$project"
 if reachable; then echo "unity editor already reachable"; exit 0; fi
 mkdir -p "$(dirname "$log")"
-setsid nohup "$editor" -projectpath "$project" -logFile "$log" >/dev/null 2>&1 &
+flags=(-projectpath "$project" -logFile "$log")
+if [ "${SA_UNITY_WINDOW:-0}" != "1" ]; then flags+=(-batchmode); fi
+setsid nohup "$editor" "${flags[@]}" >/dev/null 2>&1 &
 for _ in $(seq 1 120); do
   if reachable; then echo "unity editor reachable"; exit 0; fi
   sleep 5

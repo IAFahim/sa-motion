@@ -1,0 +1,18 @@
+name: ci
+on:
+  push:
+  pull_request:
+jobs:
+  portable:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: eng/verify.sh --no-unity
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-logs
+          path: artifacts/verify
