@@ -37,6 +37,8 @@ namespace SA.Balance
         public float AnkleVelGain;
         public float HipGain;
         public float HipVelGain;
+        public float HipRollGain;
+        public float HipRollVelGain;
         public float LeanMax;
         public float StepMargin;
         public float StepHeight;
@@ -83,6 +85,8 @@ namespace SA.Balance
                 p.AnkleVelGain = 0f;
                 p.HipGain = 0.3f;
                 p.HipVelGain = 0.05f;
+                p.HipRollGain = 1f;
+                p.HipRollVelGain = 0.2f;
                 p.LeanMax = 0.3f;
                 p.StepMargin = 0.05f;
                 p.StepHeight = 0.1f;

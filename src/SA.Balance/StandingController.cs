@@ -42,12 +42,13 @@ namespace SA.Balance
             Float3 ankle = AnkleOffset(capture, support, comVelocity, q);
             Float3 hip = HipOffset(capture, support, comVelocity, q);
             Float3 torsoLean = upright + hip;
+            Float3 pelvisRoll = new Float3(0f, 0f, hip.Z * 0.5f);
             for (int i = 0; i < count; i++)
             {
                 var role = (Role)i;
                 BodyState body = SanitizeBody(bodies[i]);
                 Quaternion target = BaseTarget(input.TargetWorld, i, body.Rotation);
-                target = ApplyCorrection(target, role, torsoLean, ankle, flex, q);
+                target = ApplyCorrection(target, role, torsoLean, pelvisRoll, ankle, flex, q);
                 float stiffness = BalanceMath.StiffnessFor(role, q);
                 float damping = BalanceMath.DampingFor(role, q);
                 var drive = new BodyDrive();
@@ -127,9 +128,8 @@ namespace SA.Balance
 
         static Float3 AnkleOffset(Float3 capture, Float3 support, Float3 velocity, BalanceParams q)
         {
-            float error = capture.Z - support.Z;
-            float push = velocity.Z;
-            float pitched = error * q.AnkleGain + push * q.AnkleVelGain;
+            float errorZ = capture.Z - support.Z;
+            float pitched = errorZ * q.AnkleGain + velocity.Z * q.AnkleVelGain;
             pitched = BalanceMath.Clamp(pitched, -q.LeanMax, q.LeanMax);
             return new Float3(pitched, 0f, 0f);
         }
@@ -139,20 +139,20 @@ namespace SA.Balance
             float errorX = capture.X - support.X;
             float errorZ = capture.Z - support.Z;
             float pitched = errorZ * q.HipGain + velocity.Z * q.HipVelGain;
-            float rolled = errorX * q.HipGain + velocity.X * q.HipVelGain;
+            float rolled = errorX * q.HipRollGain + velocity.X * q.HipRollVelGain;
             pitched = BalanceMath.Clamp(pitched, -q.LeanMax, q.LeanMax);
             rolled = BalanceMath.Clamp(rolled, -q.LeanMax, q.LeanMax);
-            return new Float3(pitched, 0f, -rolled);
+            return new Float3(pitched, 0f, rolled);
         }
 
-        static Quaternion ApplyCorrection(Quaternion target, Role role, Float3 upright, Float3 ankle, float flex, BalanceParams q)
+        static Quaternion ApplyCorrection(Quaternion target, Role role, Float3 torsoLean, Float3 pelvisRoll, Float3 ankle, float flex, BalanceParams q)
         {
             switch (role)
             {
                 case Role.Torso:
-                    return BalanceMath.OffsetByVector(target, upright, q.UprightMax);
+                    return BalanceMath.OffsetByVector(target, torsoLean, q.UprightMax);
                 case Role.Pelvis:
-                    return target;
+                    return BalanceMath.OffsetByVector(target, pelvisRoll, q.UprightMax);
                 case Role.FootLeft:
                 case Role.FootRight:
                     return BalanceMath.OffsetByVector(target, ankle, q.LeanMax);

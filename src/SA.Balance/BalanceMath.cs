@@ -75,6 +75,8 @@ namespace SA.Balance
             q.AnkleVelGain = SanitizeNumber(q.AnkleVelGain, standard.AnkleVelGain);
             q.HipGain = SanitizeNumber(q.HipGain, standard.HipGain);
             q.HipVelGain = SanitizeNumber(q.HipVelGain, standard.HipVelGain);
+            q.HipRollGain = SanitizeNumber(q.HipRollGain, standard.HipRollGain);
+            q.HipRollVelGain = SanitizeNumber(q.HipRollVelGain, standard.HipRollVelGain);
             q.LeanMax = NonNegativeOr(q.LeanMax, standard.LeanMax);
             q.StepMargin = NonNegativeOr(q.StepMargin, standard.StepMargin);
             q.StepHeight = NonNegativeOr(q.StepHeight, standard.StepHeight);

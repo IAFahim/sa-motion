@@ -11,12 +11,14 @@ orientations held by the harness single-clamp-sum drives.
 ## Method
 
 Center of mass comes from Humanoid mass fractions. Natural frequency is
-`sqrt(g / h)` with clamped height. Capture point is horizontal center plus
-horizontal velocity over frequency. Support center is the mean of contacting
-foot points. Margin is capture distance from support minus support radius.
-Outer loops shift world-orientation targets: torso and pelvis upright
+square root of gravity over clamped height. Capture point is horizontal
+center plus horizontal velocity over frequency. Support center is the mean
+of contacting foot points. Margin is capture distance from support minus
+support radius. Outer loops shift world-orientation targets: torso upright
 correction from lean plus lean rate, foot pitch from capture error, knee
-flex from pelvis height error. Inner gains copy the harness hold schedule.
+flex from pelvis height error, torso pitch from capture error, and torso
+plus half pelvis counter-roll from lateral capture error.
+Inner gains copy the harness hold schedule.
 
 ## Parameters
 
@@ -43,9 +45,11 @@ flex from pelvis height error. Inner gains copy the harness hold schedule.
 | UprightDamp | 0.15 | Torso lean rate correction that damps the 3 s sway mode |
 | UprightMax | 0.3 | Caps upright target shift inside stable tilt |
 | AnkleGain | 2 | Capture error to foot pitch that shifts the center of pressure |
-| AnkleVelGain | 0 | Capture velocity to foot pitch, reserved for push tuning |
-| HipGain | 0.3 | Capture error to torso pitch and roll that steadies lateral drift |
-| HipVelGain | 0.05 | Center velocity to torso pitch and roll that damps sway rate |
+| AnkleVelGain | 0 | Capture velocity to foot pitch, kept off since pitch gain suffices |
+| HipGain | 0.3 | Capture error to torso pitch that steadies fore-aft sway |
+| HipVelGain | 0.05 | Center velocity to torso pitch that damps fore-aft sway rate |
+| HipRollGain | 1 | Lateral capture error to torso counter-roll that rights side pushes |
+| HipRollVelGain | 0.2 | Lateral center velocity to counter-roll that damps side sway rate |
 | LeanMax | 0.3 | Caps capture lean target shift inside stable tilt |
 | StepMargin | 0.05 | Capture must clear support by this before a step starts |
 | StepHeight | 0.1 | Swing foot clearance that steps over ground without tripping |
