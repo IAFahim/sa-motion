@@ -21,6 +21,6 @@ Import the `Reactions Demo` sample, build the SA Showcase Kyle prefabs, then run
 ## Limits
 
 - Not a balance controller. The character stands because it is tracked toward its animation, not because it steps or shifts weight. The ported balance code in `SA.ReactionControl` is merged but not wired in.
-- Joints are ball-and-socket. Unity's cone-and-twist ragdoll joints explode under a hard knockdown in this setup (`RagdollAuthoring.JointMode = 0` keeps them for experiments).
+- Joints are cone-and-twist with limits in the range of Unity's own ragdoll wizard (cone up to 63 degrees, twist -50 to 70). Cones near 170 degrees explode under a hard knockdown; `RagdollAuthoring.JointMode` 1 gives ball-and-socket.
 - No get-up animation: after a knockdown the pose is reset.
 - One unit-scale rig per ragdoll; pooled instances share collision groups.

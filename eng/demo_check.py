@@ -38,7 +38,7 @@ checks.append(("stands before the first hit", bool(standing) and all(0.9 < r["pe
 shove = window(5.0, 6.5)
 baseline = sum(r["head_x"] for r in standing) / len(standing), sum(r["head_z"] for r in standing) / len(standing)
 deflection = max(((r["head_x"] - baseline[0]) ** 2 + (r["head_z"] - baseline[1]) ** 2) ** 0.5 for r in shove) if shove else 0
-checks.append((f"light shove deflects the head ({deflection:.2f} m)", deflection > 0.08))
+checks.append((f"light shove deflects the head ({deflection:.2f} m)", deflection > 0.05))
 checks.append(("strength dips after a shove", bool(shove) and min(r["strength"] for r in shove) < 0.8))
 checks.append(("no explosion", all(abs(r["pelvis_y"]) < 3 and abs(r["head_y"]) < 3 for r in rows)))
 down = window(21.0, 23.5)

@@ -247,8 +247,8 @@ namespace SA.Reactions.Editor
                     item.AnchorInParent = math.rotate(math.inverse(rotation[parent]), origin - position[parent]);
                     var limit = HumanProfile.Of(r).Limit;
                     var hinge = r == Role.ForearmLeft || r == Role.ForearmRight || r == Role.ShinLeft || r == Role.ShinRight;
-                    item.ConeAngle = hinge ? 1.2f : math.clamp(math.max(limit.Swing1Max, limit.Swing2Max), 0.25f, 3.0f);
-                    item.TwistRange = hinge ? new float2(-0.5f, 0.5f) : new float2(limit.TwistMin, limit.TwistMax);
+                    item.ConeAngle = hinge ? 1.0f : math.clamp(math.max(limit.Swing1Max, limit.Swing2Max), 0.35f, 1.1f);
+                    item.TwistRange = hinge ? new float2(-0.4f, 0.4f) : new float2(math.clamp(limit.TwistMin, -0.9f, -0.1f), math.clamp(limit.TwistMax, 0.1f, 1.2f));
                 }
                 result.Add(item);
             }

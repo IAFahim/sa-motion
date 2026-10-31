@@ -7,7 +7,7 @@ namespace SA.Reactions
     {
         public float TotalMass = 70f;
         public float GainScale = 1f;
-        public int JointMode = 1;
+        public int JointMode;
         public float LimpTone = 0.05f;
         public float MaxStrength = 1f;
         public float RecoverSeconds = 1.2f;
