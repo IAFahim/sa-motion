@@ -1,0 +1,9 @@
+{
+  "name": "SA.Motion.PlayerProof.Editor",
+  "references": ["SA.Motion.PlayerProof"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "autoReferenced": false,
+  "noEngineReferences": false
+}

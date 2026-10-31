@@ -1,6 +1,6 @@
 # First motion-kernel checkpoint
 
-This checkpoint proves the portable kernel and its Unity Editor/Burst bridge. It is not a completed active-ragdoll controller or a passed player/deployment gate.
+The initial checkpoint proves the portable kernel and its Unity Editor/Burst bridge. The follow-on player result validates the same artifact for the tested Linux CoreCLR/native-Burst host only; it is not an active-ragdoll controller or universal deployment certification.
 
 Environment: .NET SDK 10.0.401, netstandard2.1/C#9 library, .NET10 test/package-consumer host; Unity 7000.0.0a12, installed Burst2 integration (package metadata 2.0.0), Entities/Physics 6.7.0 in `/home/i/ruk2`.
 
@@ -13,7 +13,8 @@ Environment: .NET SDK 10.0.401, netstandard2.1/C#9 library, .NET10 test/package-
 | Cross-runtime data | Managed Unity/Burst matched the .NET package consumer fixture within tolerance |
 | Artifact/ABI | Packed and imported DLL SHA256 matched; assembly references only `netstandard`; POD size checks passed |
 | Existing SA regression suite | 35 passed, zero failed/skipped, before bridge integration |
-| Standalone player/AOT | Pending; not inferred from Editor success |
+| Standalone player/native Burst | Passed on Linux CoreCLR with actual variable-input native job, measured loaded DLL hash and full numerical report; see player-verification.md |
+| Bounded kernel/conversion cost probe | Pending separately; no performance claim from correctness tests |
 | Delirium-derived controller | Not implemented; source/data gates remain unresolved |
 
 Verified portable DLL SHA256:

@@ -1,0 +1,14 @@
+{
+  "name": "SA.Motion.PlayerProof",
+  "rootNamespace": "SA.Motion.Unity.Proof",
+  "references": ["Unity.Burst", "Unity.Collections"],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": true,
+  "overrideReferences": true,
+  "precompiledReferences": ["SA.Motion.dll"],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

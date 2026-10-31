@@ -6,4 +6,4 @@ Current code contains no translated Delirium controller functions, native solver
 
 The planned `SA.ReactionControl` source-level port is separate, not yet created, and remains gated on an actual rights/notices/distribution decision and independently documented physical/control data. A language rewrite, separate assembly/repository or private visibility does not settle those obligations. See the implementation plan and tracking issue: https://github.com/IAFahim/com.sa.unity/issues/1 .
 
-Unity integration is a thin caller/conversion/proof layer; it consumes the same portable DLL as the local NuGet consumer. HLSL/GPU animation integration, physical bodies/controller behavior and player deployment are not claimed by this first checkpoint. No package was published to nuget.org.
+Unity integration is a thin caller/conversion/proof layer; it consumes the same portable DLL as the local NuGet consumer. HLSL/GPU animation integration and physical bodies/controller behavior are not claimed. The follow-on player proof covers Linux CoreCLR/native Burst only; no IL2CPP or other-platform result is inferred. No package was published to nuget.org.

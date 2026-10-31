@@ -1,0 +1,33 @@
+{
+    "Passed": true,
+    "NativeExecution": 1,
+    "ManagedControl": 0,
+    "ExpectedFixtureSha256": "14cf3593e78d1c46653929f4abeabb8129d504df8c252f5b60f330958c85da4e",
+    "VerifiedBuildInputSha256": "14cf3593e78d1c46653929f4abeabb8129d504df8c252f5b60f330958c85da4e",
+    "LoadedDllSha256": "14cf3593e78d1c46653929f4abeabb8129d504df8c252f5b60f330958c85da4e",
+    "RuntimeDllHashAvailable": true,
+    "UnityVersion": "7000.0.0a12",
+    "ScriptingBackend": "CoreCLR",
+    "Error": "",
+    "Tolerance": 0.00019999999494757503,
+    "MaxNativeManagedError": 0.0,
+    "ObservedPosition": [
+        0.4999999701976776,
+        0.9999999403953552,
+        1.4999998807907104
+    ],
+    "ObservedRotation": [
+        0.0,
+        0.24740396440029144,
+        0.0,
+        0.9689124226570129
+    ],
+    "ObservedScale": [
+        1.4142125844955444,
+        1.7320489883422852,
+        1.9999972581863403
+    ],
+    "ObservedScalar": 0.5,
+    "ObservedScalarVelocity": -1.875,
+    "ObservedScalarAcceleration": 0.0
+}
