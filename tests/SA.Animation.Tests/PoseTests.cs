@@ -338,6 +338,69 @@ public class PoseMathTests
     }
 
     [Fact]
+    public void TheMeanDoesNotDependOnTheSignOfAnyRotationAfterTheFirst()
+    {
+        var random = new Random(59);
+        for (var i = 0; i < 100; i++)
+        {
+            var plain = default(PoseSum);
+            var flipped = default(PoseSum);
+            for (var k = 0; k < 3; k++)
+            {
+                var pose = PoseFixtures.RandomPose(random);
+                var weight = PoseFixtures.Between(random, 0.1f, 1f);
+                var other = pose;
+                if (k > 0 && random.Next(2) == 0)
+                    other.Rotation = -other.Rotation;
+                plain = PoseMath.Add(plain, pose, weight);
+                flipped = PoseMath.Add(flipped, other, weight);
+            }
+            Assert.InRange(PoseFixtures.RotationGap(PoseMath.Mean(flipped).Rotation, PoseMath.Mean(plain).Rotation), 0f, 1e-5f);
+        }
+    }
+
+    [Fact]
+    public void NonFiniteFieldsFallBackToTheirNeutralValues()
+    {
+        var nan = float.NaN;
+        var badVector = new Float3(nan, 1f, 2f);
+        var badRotation = new Quaternion(nan, 0f, 0f, 1f);
+        var bad = new Pose { Position = badVector, Rotation = badRotation, Scale = badVector };
+        var good = new Pose { Position = new Float3(1f, 2f, 3f), Rotation = PoseFixtures.RestTilt, Scale = new Float3(2f, 2f, 2f) };
+
+        var lerped = PoseMath.Lerp(bad, good, 0.5f);
+        Assert.Equal(Float3.Zero, lerped.Position);
+        Assert.Equal(Quaternion.Identity, lerped.Rotation);
+        Assert.Equal(Float3.One, lerped.Scale);
+
+        var delta = PoseMath.Delta(bad, good);
+        Assert.Equal(Float3.Zero, delta.Position);
+        Assert.Equal(Quaternion.Identity, delta.Rotation);
+        Assert.Equal(Float3.Zero, delta.Scale);
+
+        var accumulated = PoseMath.Accumulate(good, bad, 1f);
+        Assert.Equal(Float3.Zero, accumulated.Position);
+        Assert.Equal(Float3.One, accumulated.Scale);
+        Assert.InRange(PoseFixtures.RotationGap(accumulated.Rotation, good.Rotation), 0f, 1e-6f);
+
+        var spoiled = PoseMath.Add(PoseMath.Add(default, good, 1f), bad, 1f);
+        Assert.Equal(Float3.Zero, spoiled.Position);
+        Assert.Equal(Float3.Zero, spoiled.Scale);
+        Assert.Equal(default(Quaternion), spoiled.Rotation);
+        Assert.Equal(2f, spoiled.Weight);
+
+        var mean = PoseMath.Mean(new PoseSum { Position = badVector, Rotation = badRotation, Scale = badVector, Weight = 2f });
+        Assert.Equal(Float3.Zero, mean.Position);
+        Assert.Equal(Quaternion.Identity, mean.Rotation);
+        Assert.Equal(Float3.One, mean.Scale);
+
+        Assert.Equal(0f, PoseFixtures.AffineGap(PoseMath.Affine(bad), Affine.Identity));
+        var product = PoseMath.Mul(new Affine(badVector, Float3.Zero, Float3.Zero, Float3.Zero), Affine.Identity);
+        Assert.Equal(0f, PoseFixtures.AffineGap(product, default));
+        Assert.Equal(0f, PoseFixtures.ComponentGap(ClipSampling.At(new[] { bad }, 1, 0, 0f), Pose.Identity));
+    }
+
+    [Fact]
     public void MeanIsTheWeightedAverageOfTheSummedPoses()
     {
         var a = new Pose { Position = new Float3(4f, 0f, 0f), Rotation = Quaternion.Identity, Scale = new Float3(1f, 1f, 1f) };

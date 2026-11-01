@@ -52,7 +52,7 @@ namespace SA.Animation
             var next = int.MaxValue;
             for (var i = 0; i < states.Length; i++)
             {
-                int layer = states[i].Layer;
+                var layer = states[i].Layer;
                 if (layer > after && layer < next)
                     next = layer;
             }

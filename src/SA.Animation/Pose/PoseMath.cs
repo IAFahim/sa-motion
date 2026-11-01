@@ -67,7 +67,7 @@ namespace SA.Animation
 
         public static Pose Mean(in PoseSum sum)
         {
-            var inverse = sum.Weight > 0f ? Scalar.Finite(1f / sum.Weight) : 0f;
+            var inverse = sum.Weight > 0f ? 1f / sum.Weight : 0f;
             return new Pose
             {
                 Position = Finite(sum.Position * inverse, Float3.Zero),
