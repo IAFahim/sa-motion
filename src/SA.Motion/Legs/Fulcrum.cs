@@ -49,9 +49,13 @@ namespace SA.Motion.Legs
             return ankle.IsFinite ? ankle : turned;
         }
 
-        public static Quaternion AlignToSlope(Quaternion foot, Float3 up, Float3 normal, float weight, float maxAngle)
+        public static Quaternion AlignToSlope(Quaternion foot, Float3 up, Float3 normal, float weight, float maxAngle) =>
+            Tilted(Quaternion.Normalize(foot), up, normal, weight, maxAngle);
+
+        internal static Quaternion Tilted(Quaternion foot, Float3 up, Float3 normal, float weight, float maxAngle)
         {
-            foot = Quaternion.Normalize(foot);
+            if (normal.X == up.X && normal.Y == up.Y && normal.Z == up.Z)
+                return foot;
             var tilt = Quaternion.Canonical(TwoBoneIK.FromTo(up, normal));
             var sine = tilt.Vector.Length;
             if (!Scalar.IsFinite(sine) || sine <= Scalar.MagnitudeEpsilon)

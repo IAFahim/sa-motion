@@ -113,7 +113,7 @@ namespace SA.Motion.Legs
             var wasPlanted = state.Planted != 0;
             var drift = wasPlanted ? Flat(contact - state.Anchor, state.AnchorNormal).Length : 0f;
             var plant = Planting.Decide(wasPlanted, ground, height, rise, drift, input.ContactAuthored, input.Contact, p);
-            var aligned = Fulcrum.AlignToSlope(foot, up, plant && wasPlanted ? state.AnchorNormal : normal, p.SlopeAlign, p.MaxSlopeAlign);
+            var aligned = plant ? Fulcrum.Tilted(foot, up, wasPlanted ? state.AnchorNormal : normal, p.SlopeAlign, p.MaxSlopeAlign) : foot;
             if (plant && !wasPlanted)
             {
                 var current = state.Output.Count != 0 ? state.Output.Current.Position : input.Ankle + lift;

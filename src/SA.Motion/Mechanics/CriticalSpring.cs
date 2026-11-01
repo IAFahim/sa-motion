@@ -24,6 +24,8 @@ namespace SA.Motion.Mechanics
                 return new SpringState { Value = value, Velocity = velocity };
             if (!Scalar.IsFinite(halfLife) || halfLife <= Scalar.DurationEpsilon)
                 return new SpringState { Value = goal, Velocity = 0f };
+            if (value == goal && velocity == 0f)
+                return new SpringState { Value = goal, Velocity = 0f };
             var rate = 2f * Ln2 / halfLife;
             var offset = value - goal;
             var momentum = velocity + offset * rate;
