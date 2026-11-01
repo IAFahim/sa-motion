@@ -414,6 +414,15 @@ public class PoseMathTests
     }
 
     [Fact]
+    public void AWeightTooSmallToInvertGivesTheNeutralPose()
+    {
+        var random = new Random(61);
+        var sum = PoseMath.Add(default, PoseFixtures.RandomPose(random), 1e-40f);
+        Assert.True(sum.Weight > 0f);
+        Assert.Equal(0f, PoseFixtures.ComponentGap(PoseMath.Mean(sum), Pose.Identity));
+    }
+
+    [Fact]
     public void AnEmptySumHasTheDocumentedMean()
     {
         var mean = PoseMath.Mean(default);
