@@ -307,6 +307,6 @@ public class InertializationTests
         Assert.Equal(88, Marshal.SizeOf<PoseHistory>());
         Assert.Equal(120, Marshal.SizeOf<PoseTransition>());
         Assert.DoesNotContain(typeof(ScalarDecay).Assembly.GetReferencedAssemblies(), a => a.Name!.StartsWith("Unity", StringComparison.Ordinal));
-        Assert.Equal(".NETStandard,Version=v2.1", typeof(ScalarDecay).Assembly.GetCustomAttributes(typeof(System.Runtime.Versioning.TargetFrameworkAttribute), false).Cast<System.Runtime.Versioning.TargetFrameworkAttribute>().Single().FrameworkName);
+        Assert.Equal(LibraryUnderTest.Framework, typeof(ScalarDecay).Assembly.GetCustomAttributes(typeof(System.Runtime.Versioning.TargetFrameworkAttribute), false).Cast<System.Runtime.Versioning.TargetFrameworkAttribute>().Single().FrameworkName);
     }
 }

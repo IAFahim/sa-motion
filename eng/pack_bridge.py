@@ -19,13 +19,16 @@ run(['dotnet', 'pack', 'src/SA.Motion/SA.Motion.csproj', '--configuration', 'Rel
 package = artifacts / 'packages' / 'SA.Motion.0.1.0.nupkg'
 with zipfile.ZipFile(package) as archive:
     payload = archive.read('lib/netstandard2.1/SA.Motion.dll')
+    consumed = archive.read('lib/net10.0/SA.Motion.dll')
 sha = hashlib.sha256(payload).hexdigest()
-cache = artifacts / 'smoke-packages' / sha
+consumed_sha = hashlib.sha256(consumed).hexdigest()
+cache = artifacts / 'smoke-packages' / consumed_sha
 run(['dotnet', 'restore', 'tests/PackageSmoke/PackageSmoke.csproj', '--source', str(artifacts / 'packages'), '--packages', str(cache), '--no-cache'])
 run(['dotnet', 'build', 'tests/PackageSmoke/PackageSmoke.csproj', '--configuration', 'Release', '--no-restore', '--disable-build-servers', '-m:1', '-p:UseSharedCompilation=false'])
 report = json.loads(run(['dotnet', 'tests/PackageSmoke/bin/Release/net10.0/PackageSmoke.dll'], capture=True).stdout)
-if report['Sha256'] != sha:
+if report['Sha256'] != consumed_sha:
     raise RuntimeError('Local NuGet consumer loaded different DLL bytes')
+report = dict(report, ConsumedSha256=consumed_sha, ConsumedFramework='net10.0', Sha256=sha)
 if any(name.startswith('Unity') for name in report['References']):
     raise RuntimeError('Portable DLL references Unity')
 bridge = root / 'packages' / 'com.sa.motion.unity'
