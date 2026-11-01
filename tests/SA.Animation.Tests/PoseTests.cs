@@ -744,8 +744,51 @@ public class PoseBlendTests
         Assert.True(withOverride >= 120, "override coverage " + withOverride);
         Assert.True(withAdditive >= 100, "additive coverage " + withAdditive);
         Assert.True(withBoth >= 50, "mixed coverage " + withBoth);
-        Assert.True(stackedOverrides >= 30, "stacked coverage " + stackedOverrides);
+        Assert.True(stackedOverrides >= 20, "stacked coverage " + stackedOverrides);
         Assert.True(moved >= 150, "moved coverage " + moved);
+    }
+
+    [Fact]
+    public void DenselyStackedLayersMatchThePerBoneReference()
+    {
+        var random = new Random(8);
+        for (var run = 0; run < 200; run++)
+        {
+            var scene = PoseFixtures.RandomScene(random, 3, 5, 3, 3);
+            var states = new ClipState[random.Next(4, 9)];
+            for (var i = 0; i < states.Length; i++)
+            {
+                states[i] = PoseFixtures.State(
+                    random.Next(3),
+                    random.Next(2),
+                    random.Next(2) == 0 ? ClipMode.Override : ClipMode.Additive,
+                    random.Next(3),
+                    (Wrap)random.Next(3),
+                    PoseFixtures.Between(random, -0.5f, 2.5f),
+                    PoseFixtures.Between(random, 0.1f, 1f),
+                    PoseFixtures.Between(random, 0.5f, 1f));
+            }
+            var blended = scene.Blend(states);
+            for (var bone = 0; bone < scene.Bones; bone++)
+            {
+                var gap = PoseFixtures.ComponentGap(scene.PerBone(states, bone), blended[bone]);
+                Assert.True(gap <= 1e-5f, "run " + run + " bone " + bone + " component gap " + gap);
+            }
+        }
+    }
+
+    [Fact]
+    public void ANegativeWeightNeverContributesEvenThroughANegativeMask()
+    {
+        var scene = PoseFixtures.Rig();
+        var clip = scene.Clips[0];
+        var sums = new PoseSum[2];
+        var pose = (Pose[])scene.Rest.Clone();
+        PoseBlend.Override(sums, clip.Samples, clip.FrameCount, 1f, new[] { -1f, -1f }, -1f);
+        PoseBlend.Additive(pose, clip.Samples, clip.Reference, clip.FrameCount, 1f, new[] { -1f, -1f }, -1f);
+        Assert.All(sums, sum => Assert.Equal(default(PoseSum), sum));
+        for (var bone = 0; bone < 2; bone++)
+            Assert.Equal(0f, PoseFixtures.ComponentGap(pose[bone], scene.Rest[bone]));
     }
 
     [Fact]
