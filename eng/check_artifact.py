@@ -8,6 +8,10 @@ dll = hashlib.sha256((bridge / "Runtime/Plugins/SA.Motion.dll").read_bytes()).he
 recorded = json.loads((bridge / "artifact.json").read_text())["sha256"]
 golden = json.loads((bridge / "Tests/Resources/SA.Motion/PackageSmoke.json").read_text())["Sha256"]
 problems = [f"{name} {value} != dll {dll}" for name, value in (("artifact.json", recorded), ("PackageSmoke.json", golden)) if value != dll]
+animation = hashlib.sha256((bridge / "Runtime/Plugins/SA.Animation.dll").read_bytes()).hexdigest()
+recorded_animation = json.loads((bridge / "artifact.json").read_text()).get("animationSha256")
+if animation != recorded_animation:
+    problems.append(f"artifact.json animationSha256 {recorded_animation} != SA.Animation.dll {animation}")
 reactions = bridge.parent / "com.sa.unity.reactions"
 humanoid = hashlib.sha256((reactions / "Runtime/Plugins/SA.Humanoid.dll").read_bytes()).hexdigest()
 recorded_humanoid = json.loads((reactions / "artifact.json").read_text())["sha256"]

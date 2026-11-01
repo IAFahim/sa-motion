@@ -6,6 +6,7 @@
     "SA.Editor",
     "SA.Reactions",
     "SA.Reactions.Character",
+    "SA.Motion.Unity",
     "Unity.Collections",
     "Unity.Entities",
     "Unity.Entities.Hybrid",

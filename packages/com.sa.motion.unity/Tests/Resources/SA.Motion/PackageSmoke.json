@@ -1,6 +1,6 @@
 {
   "Version": "0.1.0.0",
-  "Sha256": "5c6dbe2194513762cd284cf6bf469bacb3f55c027edc8f8f12575e84bdbb7587",
+  "Sha256": "71a4cb8ef797a2d9856d7e39fee5ef520f3132a3dc2a912e4fb8752f312dc43f",
   "Scalar": 0.5,
   "Position": [
     0.49999997,
@@ -19,6 +19,8 @@
     1.9999999
   ],
   "References": [
-    "netstandard"
-  ]
+    "System.Runtime"
+  ],
+  "ConsumedSha256": "87fd3a7042b17ff5572b1704f8133b8fb7813ca8cbc5a23b072328f8679030f5",
+  "ConsumedFramework": "net10.0"
 }

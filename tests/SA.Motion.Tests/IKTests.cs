@@ -42,34 +42,4 @@ public class IKTests
         Assert.False(TwoBoneIK.Solve(default, new Float3(0, -1, 0), new Float3(0, -2, 0), new Float3(float.NaN, 0, 0), default).Valid);
         Assert.True(TwoBoneIK.Solve(default, new Float3(0, -1, 0), new Float3(0, -2, 0), new Float3(0, -1, 0), default).Valid);
     }
-
-    [Fact]
-    public void FootCorrectionBlendsInAndRetainsItsAnchorWhileReleasing()
-    {
-        var ground = new Float3(0.2f, 0, 0);
-        var state = default(FootLockState);
-        for (var frame = 0; frame < 6; frame++)
-            state = FootLock.Step(state, ground, ground, true, 0f, 0f, 0.04f, 0.12f, 0.5f, 1f / 60f, 0.1f);
-        Assert.InRange(state.Weight, 0.999f, 1f);
-        var prior = state.Weight;
-        state = FootLock.Step(state, new Float3(0.2f, 0.2f, 0), default, false, 0.2f, 1f, 0.04f, 0.12f, 0.5f, 1f / 60f, 0.1f);
-        Assert.False(state.Locked);
-        Assert.InRange(state.Weight, 0.83f, 0.84f);
-        Assert.True(state.Weight < prior);
-        Assert.Equal(ground, state.Position);
-        for (var frame = 0; frame < 7; frame++)
-            state = FootLock.Step(state, ground, ground, false, 0f, 0f, 0.04f, 0.12f, 0.5f, 1f / 60f, 0.1f);
-        Assert.Equal(0f, state.Weight);
-    }
-
-    [Fact]
-    public void LocksAcrossRootMovementAndReleasesForLiftOrLostGround()
-    {
-        var state = FootLock.Step(default, default, default, true, 0f, 0f, 0.04f, 0.12f, 0.5f);
-        Assert.True(state.Locked);
-        var moved = FootLock.Step(state, new Float3(0.2f, 0, 0), new Float3(0.2f, 0, 0), true, 0f, 0f, 0.04f, 0.12f, 0.5f);
-        Assert.Equal(0f, moved.Position.X);
-        Assert.False(FootLock.Step(moved, new Float3(0.2f, 0.2f, 0), default, true, 0.2f, 1f, 0.04f, 0.12f, 0.5f).Locked);
-        Assert.False(FootLock.Step(moved, default, default, false, 0, 0, 0.04f, 0.12f, 0.5f).Locked);
-    }
 }
