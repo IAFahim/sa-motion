@@ -1,7 +1,14 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using SA.Motion.Legs;
 using SA.Motion.Numerics;
+
+#if SA_LIBRARY_NETSTANDARD
+const string LibraryBuild = "netstandard2.1";
+#else
+const string LibraryBuild = "net10.0";
+#endif
 
 const int Characters = 10_000;
 const int LegsPerCharacter = 2;
@@ -31,6 +38,7 @@ for (var round = 0; round < SettleRounds + Rounds; round++)
         nanosecondsPerLeg[round - SettleRounds] = ticks * 1e9 / ((double)Stopwatch.Frequency * population.Legs);
 }
 Array.Sort(nanosecondsPerLeg);
+Console.WriteLine($"runtime: {RuntimeInformation.FrameworkDescription}, library build: {LibraryBuild}");
 Console.WriteLine($"leg solver: {Characters} characters x {LegsPerCharacter} legs, LegParams.Standard, flat ground, {Rounds} rounds after {SettleRounds} settling rounds and {JitWarmupSeconds:F0} s of JIT warmup");
 Console.WriteLine($"best round:   {nanosecondsPerLeg[0]:F1} ns per leg");
 Console.WriteLine($"median round: {(nanosecondsPerLeg[Rounds / 2 - 1] + nanosecondsPerLeg[Rounds / 2]) * 0.5:F1} ns per leg");
