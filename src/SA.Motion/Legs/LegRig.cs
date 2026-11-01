@@ -27,7 +27,7 @@ namespace SA.Motion.Legs
             var p = Prepared(parameters, bodyScale);
             var dt = Scalar.IsFinite(deltaTime) && deltaTime > 0f ? deltaTime : 0f;
             var upAxis = Unit(up, new Float3(0f, 1f, 0f));
-            var ahead = Unit(forward - upAxis * Float3.Dot(forward, upAxis), Perpendicular(upAxis));
+            var ahead = Ahead(forward, upAxis);
             var level = floor.IsFinite ? floor : Float3.Zero;
             var desired = Scalar.IsFinite(weight) ? Clamp(weight, 0f, 1f) : 0f;
             rig.Weight = rig.Started == 0 ? new SpringState { Value = desired } : CriticalSpring.Step(rig.Weight, desired, p.WeightHalfLife, dt);
@@ -224,6 +224,13 @@ namespace SA.Motion.Legs
             if (Quaternion.Dot(a, b) < 0f)
                 b = -b;
             return Quaternion.Normalize(new Quaternion(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t, a.Z + (b.Z - a.Z) * t, a.W + (b.W - a.W) * t));
+        }
+
+        static Float3 Ahead(Float3 forward, Float3 up)
+        {
+            var flat = forward - up * Float3.Dot(forward, up);
+            var length = LegMath.Length(flat);
+            return flat.IsFinite && Scalar.IsFinite(length) && length > Scalar.MagnitudeEpsilon ? flat / length : Perpendicular(up);
         }
 
         static Float3 Unit(Float3 value, Float3 fallback)
