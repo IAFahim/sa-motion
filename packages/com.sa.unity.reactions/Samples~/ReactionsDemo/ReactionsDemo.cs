@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using SA;
@@ -27,8 +28,13 @@ public class ReactionsDemo : MonoBehaviour
     public bool UseMasks = true;
     [Tooltip("Stop Play mode by itself after this many seconds of game time. 0 means never.")]
     public float StopAfterSeconds;
+    [Tooltip("The visible floor. The physics ground is built from its position, tilt and size, so characters stand on what you see. Found by the name Floor when empty.")]
+    public Transform Floor;
 
     BlobAssetReference<Collider> ground;
+    float3 groundPoint;
+    float3 groundUp;
+    readonly HashSet<Entity> placed = new HashSet<Entity>();
     EntityManager manager;
     EntityQuery ragdolls;
     EntityQuery inertials;
@@ -52,9 +58,13 @@ public class ReactionsDemo : MonoBehaviour
         step.SubstepCount = HighRatePhysics ? 1 : 4;
         step.SolverIterationCount = HighRatePhysics ? 8 : 16;
         manager.CreateSingleton(step);
-        ground = BoxCollider.Create(new BoxGeometry { Center = float3.zero, Orientation = quaternion.identity, Size = new float3(60f, 1f, 60f), BevelRadius = 0f }, CollisionFilter.Default, new Unity.Physics.Material { Friction = 0.9f, Restitution = 0f, CollisionResponse = CollisionResponsePolicy.Collide });
+        var visual = Floor != null ? Floor : GameObject.Find("Floor")?.transform;
+        var size = visual != null ? new float3(10f * math.abs(visual.lossyScale.x), 1f, 10f * math.abs(visual.lossyScale.z)) : new float3(60f, 1f, 60f);
+        groundPoint = visual != null ? (float3)visual.position : float3.zero;
+        groundUp = visual != null ? math.normalizesafe((float3)(visual.rotation * Vector3.up), new float3(0f, 1f, 0f)) : new float3(0f, 1f, 0f);
+        ground = BoxCollider.Create(new BoxGeometry { Center = new float3(0f, -0.5f, 0f), Orientation = quaternion.identity, Size = size, BevelRadius = 0f }, CollisionFilter.Default, new Unity.Physics.Material { Friction = 0.9f, Restitution = 0f, CollisionResponse = CollisionResponsePolicy.Collide });
         var floor = manager.CreateEntity(typeof(LocalTransform), typeof(PhysicsCollider), typeof(PhysicsWorldIndex));
-        manager.SetComponentData(floor, LocalTransform.FromPosition(new float3(0f, -0.5f, 0f)));
+        manager.SetComponentData(floor, LocalTransform.FromPositionRotation(groundPoint, visual != null ? (quaternion)visual.rotation : quaternion.identity));
         manager.SetComponentData(floor, new PhysicsCollider { Value = ground });
         ragdolls = manager.CreateEntityQuery(typeof(Ragdoll));
         inertials = manager.CreateEntityQuery(ComponentType.ReadWrite<TransitionIntent>(), ComponentType.ReadOnly<Rig>(), ComponentType.Exclude<Ragdoll>());
@@ -99,6 +109,7 @@ public class ReactionsDemo : MonoBehaviour
         if (StopAfterSeconds > 0f && clock >= StopAfterSeconds)
             StopPlaying();
         var cycle = clock % CycleSeconds;
+        PlaceOnGround();
         DriveInertial(cycle);
         DriveRagdoll(cycle);
         if (Scripted)
@@ -107,6 +118,28 @@ public class ReactionsDemo : MonoBehaviour
         TrackJump();
         Sample();
     }
+
+    void PlaceOnGround()
+    {
+        PlaceOnGround(inertials);
+        PlaceOnGround(ragdolls);
+    }
+
+    void PlaceOnGround(EntityQuery query)
+    {
+        using var rigs = query.ToEntityArray(Allocator.Temp);
+        foreach (var rig in rigs)
+        {
+            if (!placed.Add(rig) || !manager.HasComponent<LocalTransform>(rig))
+                continue;
+            var transform = manager.GetComponentData<LocalTransform>(rig);
+            transform.Position.y += GroundHeight(transform.Position.x, transform.Position.z);
+            manager.SetComponentData(rig, transform);
+        }
+    }
+
+    float GroundHeight(float x, float z) =>
+        groundUp.y > 0.01f ? groundPoint.y - (groundUp.x * (x - groundPoint.x) + groundUp.z * (z - groundPoint.z)) / groundUp.y : 0f;
 
     void DriveInertial(float cycle)
     {

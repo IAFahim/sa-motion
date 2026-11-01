@@ -6,7 +6,10 @@ import time
 from pathlib import Path
 
 project = Path("/home/i/ruk2")
-scene = sys.argv[2] if len(sys.argv) > 2 else "Assets/ReactionsDemo/ReactionsDemo.unity"
+args = [a for a in sys.argv[1:] if not a.startswith("--")]
+stepped = "--stepped" in sys.argv
+scene = args[1] if len(args) > 1 else "Assets/ReactionsDemo/ReactionsDemo.unity"
+seconds = args[0] if args else "30"
 telemetry = project / "Temp/sa/demo_telemetry.csv"
 
 
@@ -35,15 +38,91 @@ def set_stop_after(seconds):
         return unity("script", "eval_file", "--file", str(code)).stdout
 
 
+PAUSE = """
+var world = Unity.Entities.World.DefaultGameObjectInjectionWorld;
+if (world == null || !UnityEditor.EditorApplication.isPlaying)
+    return "waiting";
+var demo = UnityEngine.Object.FindFirstObjectByType<ReactionsDemo>();
+if (demo == null || UnityEngine.Time.frameCount < 4)
+    return "waiting";
+UnityEditor.EditorApplication.isPaused = true;
+world.GetExistingSystemManaged<Unity.Entities.UpdateWorldTimeSystem>().Enabled = false;
+var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+var text = (System.Text.StringBuilder)typeof(ReactionsDemo).GetField("telemetry", flags).GetValue(demo);
+text.Clear();
+text.Append("time,mode,strength,pelvis_y,head_y,head_x,head_z,event,decision,feet,margin,distL,distR,jump,blend\\n");
+typeof(ReactionsDemo).GetField("nextSample", flags).SetValue(demo, 0f);
+System.AppDomain.CurrentDomain.SetData("sa.clock", (double)(float)typeof(ReactionsDemo).GetField("clock", flags).GetValue(demo));
+return "paused";
+"""
+
+STEP = """
+var world = Unity.Entities.World.DefaultGameObjectInjectionWorld;
+var demo = UnityEngine.Object.FindFirstObjectByType<ReactionsDemo>();
+var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+var clockField = typeof(ReactionsDemo).GetField("clock", flags);
+var update = typeof(ReactionsDemo).GetMethod("Update", flags);
+var clock = (double)System.AppDomain.CurrentDomain.GetData("sa.clock");
+const float dt = 1f / 60f;
+var init = world.GetExistingSystemManaged<Unity.Entities.InitializationSystemGroup>();
+var sim = world.GetExistingSystemManaged<Unity.Entities.SimulationSystemGroup>();
+var presentation = world.GetExistingSystemManaged<Unity.Entities.PresentationSystemGroup>();
+for (var i = 0; i < FRAMES; i++)
+{
+    clock += dt;
+    clockField.SetValue(demo, (float)(clock - UnityEngine.Time.deltaTime));
+    update.Invoke(demo, null);
+    world.SetTime(new Unity.Core.TimeData(clock, dt));
+    init.Update();
+    sim.Update();
+    presentation.Update();
+}
+System.AppDomain.CurrentDomain.SetData("sa.clock", clock);
+return "clock=" + clock.ToString("F2");
+"""
+
+
+def run_code(text, timeout=240):
+    with tempfile.TemporaryDirectory() as directory:
+        code = Path(directory) / "snippet.cs"
+        code.write_text(text)
+        return unity("script", "eval_file", "--file", str(code), timeout=timeout).stdout
+
+
+def play_throttled():
+    unity("editor.playmode", "start")
+    for _ in range(480):
+        if telemetry.exists():
+            break
+        time.sleep(0.5)
+    unity("editor.playmode", "stop")
+
+
+def play_stepped(game_seconds):
+    unity("editor.playmode", "start")
+    for _ in range(240):
+        if '"paused"' in run_code(PAUSE):
+            break
+        time.sleep(0.5)
+    remaining = int(float(game_seconds) * 60)
+    while remaining > 0:
+        chunk = min(600, remaining)
+        run_code(STEP.replace("FRAMES", str(chunk)))
+        remaining -= chunk
+    unity("editor.playmode", "stop")
+    for _ in range(40):
+        if telemetry.exists():
+            break
+        time.sleep(0.5)
+
+
 unity("scene", "open", "--path", scene)
 telemetry.unlink(missing_ok=True)
-print(set_stop_after(sys.argv[1] if len(sys.argv) > 1 else "30").strip())
-unity("editor.playmode", "start")
-for _ in range(480):
-    if telemetry.exists():
-        break
-    time.sleep(0.5)
-unity("editor.playmode", "stop")
+if stepped:
+    play_stepped(seconds)
+else:
+    print(set_stop_after(seconds).strip())
+    play_throttled()
 unity("scene", "open", "--path", scene)
 rows = [{k: (float(v) if k not in ("mode", "event") else v) for k, v in row.items()} for row in csv.DictReader(telemetry.open())]
 if not rows:

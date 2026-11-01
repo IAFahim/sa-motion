@@ -137,6 +137,8 @@ namespace SA.Motion.Legs
             get
             {
                 var p = Standard;
+                p.PlantRise = 1f;
+                p.ReleaseRise = 1.5f;
                 p.PinRadius = 0.06f;
                 p.ReleaseDistance = 0.18f;
                 p.BlendSeconds = 0.16f;

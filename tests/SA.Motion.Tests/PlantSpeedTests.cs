@@ -187,6 +187,14 @@ public class PlantSpeedTests
     }
 
     [Fact]
+    public void GentlePlantsAFootThatIsAlreadyLiftingOffSlowlyWhereStandardWaits()
+    {
+        Assert.True(Planting.Decide(false, true, 0.01f, 0.7f, 0f, 0f, 0, 0f, LegParams.Gentle));
+        Assert.False(Planting.Decide(false, true, 0.01f, 0.7f, 0f, 0f, 0, 0f, LegParams.Standard));
+        Assert.False(Planting.Decide(false, true, 0.01f, 1.2f, 0f, 0f, 0, 0f, LegParams.Gentle));
+    }
+
+    [Fact]
     public void ThePlantSpeedStaysAfterBeingSanitisedAndScalesWithTheBody()
     {
         var p = LegParams.Standard;
