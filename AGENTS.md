@@ -103,6 +103,9 @@ Dated 2026-10-31. Numbers come from runs on this machine unless marked not measu
 
 | Piece | Result |
 |---|---|
+| Two library builds (2026-11-01) | Every `src/` project builds for net10.0 (AOT and trim analyzers on) and netstandard2.1. `eng/dotnet_test.sh` runs each suite against both builds, and the ABI test asserts the framework of the build under test. Unity loads the netstandard2.1 DLLs |
+| Fulcrum leg solver (2026-11-01) | `src/SA.Motion/Legs`: terrain offset, pin with drag, heel and ball roll, slope alignment, inertialized plant and release, pelvis drop, soft reach, smoothed weight, presets with Gentle as the default. 21 `LegTests` plus a doc-sync test. 640 ns per leg single-threaded on .NET 10 x64. See `docs/legs.md` |
+| Motions and LegIK in Unity (2026-11-01) | Enableable `SingleMotion`, `LinearMotion`, `PlanarMotion` and `DirectionalMotion` (com.sa.unity `MotionSystem`, one clip with hysteresis, an inertialized cut, gait phase kept, time-driven single) plus the enableable `LegIK` feature with a per-clip Foot IK tick. SA.Tests 53, SA.Reactions.Tests 22. Not tried in Play mode. See `docs/workflow.md` |
 | Portable libraries (`src/`) | Motion 159, Humanoid 73, ReactionControl 110, Harness 14 tests, all passing at `cbc0bb0`. Balance and Evaluation tests were added after |
 | Unity packages | `SA.Tests`, `SA.Motion.Unity.Tests`, `SA.Reactions.Tests` passing. Reactions has 17 tests |
 | Inertialized transitions (CPU) | Verified live on Kyle, with a test that the switch frame does not pop (`TransitionTests`) |

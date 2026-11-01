@@ -7,6 +7,8 @@ Start with `README.md`, then `AGENTS.md` for the repo rules, then the group you 
 | Document | Purpose |
 |---|---|
 | `README.md` | Five-minute overview: purpose, layers, checks, licences, not built yet |
+| `docs/workflow.md` | Goals in priority order, the layers, and how to set up and drive a character |
+| `docs/legs.md` | Leg IK for designers: the fulcrum model, every setting, presets, and what is verified |
 | `docs/architecture.md` | Layers and the animation-to-physics-to-bones data flow |
 | `docs/demo.md` | What the Reactions demo shows, its checks, and what it is not |
 

@@ -443,3 +443,18 @@ public class LegTests
         Assert.Equal(ParamUnit.Meters, LegParamsSpec.Bounds(LegParam.PinRadius).Unit);
     }
 }
+
+public class LegDocumentationTests
+{
+    [Fact]
+    public void TheDesignerGuideNamesEverySetting()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory != null && !File.Exists(Path.Combine(directory.FullName, "SA.Motion.sln")))
+            directory = directory.Parent;
+        Assert.NotNull(directory);
+        var guide = File.ReadAllText(Path.Combine(directory!.FullName, "docs", "legs.md"));
+        foreach (var field in Enum.GetValues<LegParam>())
+            Assert.Contains("`" + field + "`", guide);
+    }
+}
