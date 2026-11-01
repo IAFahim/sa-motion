@@ -155,7 +155,6 @@ namespace SA.Motion.Legs
         {
             if (state.HasPrevious == 0)
                 return;
-            var foot = LegMath.Unit(input.Foot);
             var hip = input.Hip + shift;
             var knee = input.Knee + shift;
             var ankle = input.Ankle + shift;
@@ -163,7 +162,7 @@ namespace SA.Motion.Legs
             var target = new Pose
             {
                 Position = planted ? pose.Ankle : input.Ankle + up * state.Terrain.Value,
-                Rotation = planted ? pose.Foot : foot,
+                Rotation = pose.Foot,
                 Scale = Float3.One
             };
             if (state.Output.Count == 0)
@@ -180,7 +179,7 @@ namespace SA.Motion.Legs
             state.BlendElapsed = Scalar.Min(state.BlendElapsed + dt, ElapsedCap);
             state.Output.Capture(output, dt);
             var weightedAnkle = ankle + (output.Position - ankle) * p.Weight;
-            var weightedFoot = Nlerp(foot, output.Rotation, p.Weight);
+            var weightedFoot = Nlerp(input.Foot, output.Rotation, p.Weight);
             var reach = SoftReach.Leg(hip, knee, ankle, weightedAnkle, ahead, p.KneeFollow, p.Softness, p.MaxStretch);
             pose = new LegPose
             {
@@ -226,7 +225,10 @@ namespace SA.Motion.Legs
         {
             if (Quaternion.Dot(a, b) < 0f)
                 b = -b;
-            return Quaternion.Normalize(new Quaternion(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t, a.Z + (b.Z - a.Z) * t, a.W + (b.W - a.W) * t));
+            if (t >= 1f)
+                return b;
+            a = LegMath.Unit(a);
+            return LegMath.Unit(new Quaternion(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t, a.Z + (b.Z - a.Z) * t, a.W + (b.W - a.W) * t));
         }
 
         static Float3 Ahead(Float3 forward, Float3 up)
