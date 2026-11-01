@@ -116,23 +116,24 @@ namespace SA.Motion.Legs
             var rise = state.HasPrevious != 0 && dt > 0f ? (clearance - state.PreviousClearance) / dt : 0f;
             var contact = input.Ankle + lift + (heelArm + (ballArm - heelArm) * Unit(p.TurnPivot));
             var wasPlanted = state.Planted != 0;
-            var drift = wasPlanted ? Flat(contact - state.Anchor, state.AnchorNormal).Length : 0f;
+            var slack = wasPlanted ? Flat(contact - state.Anchor, state.AnchorNormal) : Float3.Zero;
+            var drift = wasPlanted ? LegMath.Length(slack) : 0f;
             var plant = Planting.Decide(wasPlanted, ground, height, rise, drift, input.ContactAuthored, input.Contact, p);
             var aligned = plant ? Fulcrum.Tilted(foot, up, wasPlanted ? state.AnchorNormal : normal, p.SlopeAlign, p.MaxSlopeAlign) : foot;
+            var tilted = plant && !Same(aligned, foot);
+            var plantedHeel = tilted ? Quaternion.Rotate(aligned, shape.Heel) : heelArm;
+            var plantedBall = tilted ? Quaternion.Rotate(aligned, shape.Ball) : ballArm;
             if (plant && !wasPlanted)
             {
                 var current = state.Output.Count != 0 ? state.Output.Current.Position : input.Ankle + lift;
-                var anchor = current - Fulcrum.Ankle(Float3.Zero, normal, Quaternion.Rotate(aligned, shape.Heel), Quaternion.Rotate(aligned, shape.Ball), p.TurnPivot, p.HeelRoll, p.BallRoll, p.RollBand);
+                var anchor = current - Fulcrum.Ankle(Float3.Zero, normal, plantedHeel, plantedBall, p.TurnPivot, p.HeelRoll, p.BallRoll, p.RollBand);
                 state.Anchor = anchor - normal * Float3.Dot(anchor - input.Ground.Point, normal);
                 state.AnchorNormal = normal;
+                slack = Flat(contact - state.Anchor, state.AnchorNormal);
+                drift = LegMath.Length(slack);
             }
-            if (plant)
-            {
-                var slack = Flat(contact - state.Anchor, state.AnchorNormal);
-                var length = slack.Length;
-                if (length > p.PinRadius && length > Scalar.MagnitudeEpsilon)
-                    state.Anchor = state.Anchor + slack * ((length - p.PinRadius) / length);
-            }
+            if (plant && drift > p.PinRadius && drift > Scalar.MagnitudeEpsilon)
+                state.Anchor = state.Anchor + slack * ((drift - p.PinRadius) / drift);
             state.Changed = (byte)(plant != wasPlanted ? 1 : 0);
             state.Planted = (byte)(plant ? 1 : 0);
             state.HasPrevious = 1;
@@ -145,7 +146,7 @@ namespace SA.Motion.Legs
                 return ground && height <= p.ReleaseHeight ? state.Terrain.Value : float.PositiveInfinity;
             }
             pose.Foot = aligned;
-            pose.Ankle = Fulcrum.Ankle(state.Anchor, state.AnchorNormal, Quaternion.Rotate(aligned, shape.Heel), Quaternion.Rotate(aligned, shape.Ball), p.TurnPivot, p.HeelRoll, p.BallRoll, p.RollBand);
+            pose.Ankle = Fulcrum.Ankle(state.Anchor, state.AnchorNormal, plantedHeel, plantedBall, p.TurnPivot, p.HeelRoll, p.BallRoll, p.RollBand);
             return Float3.Dot(pose.Ankle - input.Ankle, up);
         }
 
@@ -216,6 +217,8 @@ namespace SA.Motion.Legs
                 Stretch = 1f
             };
         }
+
+        static bool Same(Quaternion a, Quaternion b) => a.X == b.X && a.Y == b.Y && a.Z == b.Z && a.W == b.W;
 
         static Float3 Flat(Float3 value, Float3 normal) => value - normal * Float3.Dot(value, normal);
 
