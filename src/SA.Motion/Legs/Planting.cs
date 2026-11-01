@@ -4,17 +4,17 @@ namespace SA.Motion.Legs
 {
     public static class Planting
     {
-        public static bool Decide(bool planted, bool ground, float height, float rise, float drift, byte contactAuthored, float contact, in LegParams p)
+        public static bool Decide(bool planted, bool ground, float height, float rise, float speed, float drift, byte contactAuthored, float contact, in LegParams p)
         {
             if (!ground)
                 return false;
             if (contactAuthored != 0)
                 return Scalar.IsFinite(contact) && contact >= 0.5f;
-            if (!Scalar.IsFinite(height) || !Scalar.IsFinite(rise) || !Scalar.IsFinite(drift))
+            if (!Scalar.IsFinite(height) || !Scalar.IsFinite(rise) || !Scalar.IsFinite(speed) || !Scalar.IsFinite(drift))
                 return false;
             if (planted)
                 return height <= p.ReleaseHeight && rise <= p.ReleaseRise && drift <= p.ReleaseDistance;
-            return height <= p.PlantHeight && rise <= p.PlantRise;
+            return height <= p.PlantHeight && rise <= p.PlantRise && (p.PlantSpeed <= 0f || speed <= p.PlantSpeed);
         }
 
         public static bool Walkable(in GroundHit ground, Float3 up, float maxSlope) =>

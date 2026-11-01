@@ -119,6 +119,22 @@ namespace SA.Reactions.Tests
         }
 
         [Test]
+        public void ADraggedPinStaysDraggedInsteadOfSnappingBackToWhereItPlanted()
+        {
+            var ik = manager.GetComponentData<LegIK>(rig);
+            ik.Params = LegParams.Gentle;
+            manager.SetComponentData(rig, ik);
+            for (var i = 0; i < 8; i++)
+                Animate(float3.zero, 0f);
+            for (var i = 1; i <= 20; i++)
+            {
+                Animate(new float3(0.02f * i, 0, 0), 0f);
+                Assert.AreEqual(1, Leg.State.Planted, "frame " + i);
+            }
+            Assert.That(0.4f - Matrix(foot).c3.x, Is.InRange(0f, LegParams.Gentle.PinRadius * 1.5f));
+        }
+
+        [Test]
         public void ReleaseNeverTeleportsAndThenFollowsTheAnimation()
         {
             for (var i = 0; i < 8; i++)

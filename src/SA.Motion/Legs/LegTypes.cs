@@ -30,6 +30,7 @@ namespace SA.Motion.Legs
         public Quaternion Lower;
         public Quaternion Foot;
         public GroundHit Ground;
+        public Float3 GroundVelocity;
         public byte ContactAuthored;
         public float Contact;
     }
@@ -52,6 +53,7 @@ namespace SA.Motion.Legs
         public SpringState Terrain;
         public Float3 Anchor;
         public Float3 AnchorNormal;
+        public Float3 PreviousContact;
         public PoseHistory Output;
         public PoseTransition Blend;
         public float BlendElapsed;

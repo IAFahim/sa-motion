@@ -6,6 +6,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
+using Unity.Physics.Extensions;
 using Unity.Transforms;
 
 namespace SA.Reactions
@@ -155,7 +156,8 @@ namespace SA.Reactions
                             Hit = (byte)(hit ? 1 : 0),
                             Point = Conversions.ToMotion(hit ? ground.Position : contact),
                             Normal = Conversions.ToMotion(hit ? ground.SurfaceNormal : up)
-                        }
+                        },
+                        GroundVelocity = Conversions.ToMotion(hit ? World.GetLinearVelocity(ground.RigidBodyIndex, ground.Position) : float3.zero)
                     };
                     shapes[i] = shape;
                     states[i] = foot.State;
@@ -176,13 +178,10 @@ namespace SA.Reactions
                     var pose = poses[i];
                     if (pose.Planted != 0)
                     {
-                        if (foot.State.Changed != 0 || supports[i] != foot.Support)
-                        {
-                            foot.Support = supports[i];
-                            foot.SupportAnchor = supports[i] != Entity.Null && (Transforms.HasComponent(supports[i]) || Fixed.HasComponent(supports[i]))
-                                ? math.transform(math.inverse(Matrix(supports[i])), Conversions.ToUnity(foot.State.Anchor))
-                                : float3.zero;
-                        }
+                        foot.Support = supports[i];
+                        foot.SupportAnchor = supports[i] != Entity.Null && (Transforms.HasComponent(supports[i]) || Fixed.HasComponent(supports[i]))
+                            ? math.transform(math.inverse(Matrix(supports[i])), Conversions.ToUnity(foot.State.Anchor))
+                            : float3.zero;
                     }
                     else
                         foot.Support = Entity.Null;

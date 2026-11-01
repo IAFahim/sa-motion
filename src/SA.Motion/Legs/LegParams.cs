@@ -24,6 +24,7 @@ namespace SA.Motion.Legs
         public float ReleaseHeight;
         public float PlantRise;
         public float ReleaseRise;
+        public float PlantSpeed;
         public float PinRadius;
         public float ReleaseDistance;
         public float BlendSeconds;
@@ -53,6 +54,7 @@ namespace SA.Motion.Legs
             ReleaseHeight = 0.09f,
             PlantRise = 0.1f,
             ReleaseRise = 0.6f,
+            PlantSpeed = 1.5f,
             PinRadius = 0.15f,
             ReleaseDistance = 0.35f,
             BlendSeconds = 0.12f,
@@ -84,6 +86,7 @@ namespace SA.Motion.Legs
                 p.ReleaseHeight = 0.12f;
                 p.PlantRise = 0.15f;
                 p.ReleaseRise = 0.8f;
+                p.PlantSpeed = 2f;
                 p.PinRadius = 0.2f;
                 p.ReleaseDistance = 0.45f;
                 p.BlendSeconds = 0.18f;
@@ -103,6 +106,7 @@ namespace SA.Motion.Legs
                 p.ReleaseHeight = 0.06f;
                 p.PlantRise = 0.05f;
                 p.ReleaseRise = 0.4f;
+                p.PlantSpeed = 1f;
                 p.PinRadius = 0.06f;
                 p.ReleaseDistance = 0.22f;
                 p.BlendSeconds = 0.08f;

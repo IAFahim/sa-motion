@@ -74,7 +74,8 @@ namespace SA.Motion.Legs
             var wasPlanted = state.Planted != 0;
             var slack = wasPlanted ? Flat(contact - state.Anchor, state.AnchorNormal) : Float3.Zero;
             var drift = wasPlanted ? LegMath.Length(slack) : 0f;
-            var plant = Planting.Decide(wasPlanted, ground, height, rise, drift, input.ContactAuthored, input.Contact, p);
+            var speed = state.HasPrevious != 0 && dt > 0f ? LegMath.Length(Flat((contact - state.PreviousContact) / dt - input.GroundVelocity, normal)) : 0f;
+            var plant = Planting.Decide(wasPlanted, ground, height, rise, speed, drift, input.ContactAuthored, input.Contact, p);
             var aligned = plant ? Fulcrum.Tilted(foot, up, wasPlanted ? state.AnchorNormal : normal, p.SlopeAlign, p.MaxSlopeAlign) : foot;
             var tilted = plant && !Same(aligned, foot);
             var plantedHeel = tilted ? Quaternion.Rotate(aligned, shape.Heel) : heelArm;
@@ -94,6 +95,7 @@ namespace SA.Motion.Legs
             state.Planted = (byte)(plant ? 1 : 0);
             state.HasPrevious = 1;
             state.PreviousClearance = Scalar.IsFinite(clearance) ? clearance : 0f;
+            state.PreviousContact = contact;
             pose.Planted = state.Planted;
             if (!plant)
             {

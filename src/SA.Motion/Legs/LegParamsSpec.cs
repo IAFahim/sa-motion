@@ -11,6 +11,7 @@ namespace SA.Motion.Legs
         ReleaseHeight,
         PlantRise,
         ReleaseRise,
+        PlantSpeed,
         PinRadius,
         ReleaseDistance,
         BlendSeconds,
@@ -45,6 +46,7 @@ namespace SA.Motion.Legs
             LegParam.ReleaseHeight => new ParamBounds(ParamUnit.Meters, 0f, 0.5f),
             LegParam.PlantRise => new ParamBounds(ParamUnit.MetersPerSecond, 0f, 5f),
             LegParam.ReleaseRise => new ParamBounds(ParamUnit.MetersPerSecond, 0f, 10f),
+            LegParam.PlantSpeed => new ParamBounds(ParamUnit.MetersPerSecond, 0f, 20f),
             LegParam.PinRadius => new ParamBounds(ParamUnit.Meters, 0f, 1f),
             LegParam.ReleaseDistance => new ParamBounds(ParamUnit.Meters, 0f, 2f),
             LegParam.BlendSeconds => new ParamBounds(ParamUnit.Seconds, 0f, 1f),
@@ -75,6 +77,7 @@ namespace SA.Motion.Legs
             LegParam.ReleaseHeight => new ParamText("ReleaseHeight", "Planting", "A planted foot lets go once the animation lifts the lowest point of its sole above this."),
             LegParam.PlantRise => new ParamText("PlantRise", "Planting", "A foot only plants while the animation raises its sole slower than this. Falling feet always may plant."),
             LegParam.ReleaseRise => new ParamText("ReleaseRise", "Planting", "A planted foot lets go as soon as the animation raises its sole faster than this."),
+            LegParam.PlantSpeed => new ParamText("PlantSpeed", "Planting", "A foot only plants once it moves slower than this over the ground, so a foot still sliding forward at touchdown waits instead of planting and tearing loose. 0 turns the check off."),
             LegParam.PinRadius => new ParamText("PinRadius", "Planting", "A planted foot stays pinned until the animated foot drifts this far from the pin. Beyond it the pin is dragged along, so the foot slides instead of overstretching."),
             LegParam.ReleaseDistance => new ParamText("ReleaseDistance", "Planting", "A planted foot lets go once the animated foot drifts this far from the pin."),
             LegParam.BlendSeconds => new ParamText("BlendSeconds", "Planting", "Every plant and release is inertialized over this time, so neither pops."),
@@ -105,6 +108,7 @@ namespace SA.Motion.Legs
             LegParam.ReleaseHeight => p.ReleaseHeight,
             LegParam.PlantRise => p.PlantRise,
             LegParam.ReleaseRise => p.ReleaseRise,
+            LegParam.PlantSpeed => p.PlantSpeed,
             LegParam.PinRadius => p.PinRadius,
             LegParam.ReleaseDistance => p.ReleaseDistance,
             LegParam.BlendSeconds => p.BlendSeconds,
@@ -138,6 +142,7 @@ namespace SA.Motion.Legs
                 case LegParam.ReleaseHeight: q.ReleaseHeight = value; break;
                 case LegParam.PlantRise: q.PlantRise = value; break;
                 case LegParam.ReleaseRise: q.ReleaseRise = value; break;
+                case LegParam.PlantSpeed: q.PlantSpeed = value; break;
                 case LegParam.PinRadius: q.PinRadius = value; break;
                 case LegParam.ReleaseDistance: q.ReleaseDistance = value; break;
                 case LegParam.BlendSeconds: q.BlendSeconds = value; break;
@@ -175,6 +180,7 @@ namespace SA.Motion.Legs
             p.ReleaseHeight = Bounded(LegParam.ReleaseHeight, parameters.ReleaseHeight, standard.ReleaseHeight, factor);
             p.PlantRise = Bounded(LegParam.PlantRise, parameters.PlantRise, standard.PlantRise, factor);
             p.ReleaseRise = Bounded(LegParam.ReleaseRise, parameters.ReleaseRise, standard.ReleaseRise, factor);
+            p.PlantSpeed = Bounded(LegParam.PlantSpeed, parameters.PlantSpeed, standard.PlantSpeed, factor);
             p.PinRadius = Bounded(LegParam.PinRadius, parameters.PinRadius, standard.PinRadius, factor);
             p.ReleaseDistance = Bounded(LegParam.ReleaseDistance, parameters.ReleaseDistance, standard.ReleaseDistance, factor);
             p.BlendSeconds = Bounded(LegParam.BlendSeconds, parameters.BlendSeconds, standard.BlendSeconds, factor);
