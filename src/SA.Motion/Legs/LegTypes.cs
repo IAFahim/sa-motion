@@ -35,6 +35,14 @@ namespace SA.Motion.Legs
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct LegRigState
+    {
+        public byte Started;
+        public SpringState Weight;
+        public SpringState Pelvis;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct LegState
     {
         public byte Planted;

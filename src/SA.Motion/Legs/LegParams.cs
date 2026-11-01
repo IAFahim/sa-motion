@@ -8,7 +8,8 @@ namespace SA.Motion.Legs
         Standard,
         Grounded,
         Agile,
-        Strict
+        Strict,
+        Gentle
     }
 
     [Serializable]
@@ -18,6 +19,7 @@ namespace SA.Motion.Legs
         public const float ReferenceLegLength = 0.85f;
 
         public float Weight;
+        public float WeightHalfLife;
         public float PlantHeight;
         public float ReleaseHeight;
         public float PlantRise;
@@ -46,6 +48,7 @@ namespace SA.Motion.Legs
         public static LegParams Standard => new LegParams
         {
             Weight = 1f,
+            WeightHalfLife = 0.12f,
             PlantHeight = 0.035f,
             ReleaseHeight = 0.09f,
             PlantRise = 0.1f,
@@ -125,8 +128,28 @@ namespace SA.Motion.Legs
             }
         }
 
+        public static LegParams Gentle
+        {
+            get
+            {
+                var p = Standard;
+                p.PinRadius = 0.06f;
+                p.ReleaseDistance = 0.18f;
+                p.BlendSeconds = 0.16f;
+                p.SlopeAlign = 0.6f;
+                p.MaxSlopeAlign = 0.25f;
+                p.MaxStepHeight = 0.12f;
+                p.Softness = 0.05f;
+                p.PelvisDrop = 0.06f;
+                p.PelvisRaise = 0.02f;
+                p.PelvisHalfLife = 0.12f;
+                return p;
+            }
+        }
+
         public static LegParams Preset(LegPreset preset) => preset switch
         {
+            LegPreset.Gentle => Gentle,
             LegPreset.Grounded => Grounded,
             LegPreset.Agile => Agile,
             LegPreset.Strict => Strict,

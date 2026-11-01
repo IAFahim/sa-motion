@@ -6,6 +6,7 @@ namespace SA.Motion.Legs
     public enum LegParam : byte
     {
         Weight,
+        WeightHalfLife,
         PlantHeight,
         ReleaseHeight,
         PlantRise,
@@ -39,6 +40,7 @@ namespace SA.Motion.Legs
         public static ParamBounds Bounds(LegParam field) => field switch
         {
             LegParam.Weight => new ParamBounds(ParamUnit.Ratio, 0f, 1f),
+            LegParam.WeightHalfLife => new ParamBounds(ParamUnit.Seconds, 0f, 1f),
             LegParam.PlantHeight => new ParamBounds(ParamUnit.Meters, 0f, 0.3f),
             LegParam.ReleaseHeight => new ParamBounds(ParamUnit.Meters, 0f, 0.5f),
             LegParam.PlantRise => new ParamBounds(ParamUnit.MetersPerSecond, 0f, 5f),
@@ -68,6 +70,7 @@ namespace SA.Motion.Legs
         public static ParamText Text(LegParam field) => field switch
         {
             LegParam.Weight => new ParamText("Weight", "Overall", "How much the leg solver changes the animated legs. 0 leaves the animation untouched."),
+            LegParam.WeightHalfLife => new ParamText("WeightHalfLife", "Overall", "How quickly the leg solver fades in or out when a clip or timeline turns foot IK on or off."),
             LegParam.PlantHeight => new ParamText("PlantHeight", "Planting", "A foot can plant once the lowest point of its sole is closer to the ground than this."),
             LegParam.ReleaseHeight => new ParamText("ReleaseHeight", "Planting", "A planted foot lets go once the animation lifts the lowest point of its sole above this."),
             LegParam.PlantRise => new ParamText("PlantRise", "Planting", "A foot only plants while the animation raises its sole slower than this. Falling feet always may plant."),
@@ -97,6 +100,7 @@ namespace SA.Motion.Legs
         public static float Get(in LegParams p, LegParam field) => field switch
         {
             LegParam.Weight => p.Weight,
+            LegParam.WeightHalfLife => p.WeightHalfLife,
             LegParam.PlantHeight => p.PlantHeight,
             LegParam.ReleaseHeight => p.ReleaseHeight,
             LegParam.PlantRise => p.PlantRise,
@@ -129,6 +133,7 @@ namespace SA.Motion.Legs
             switch (field)
             {
                 case LegParam.Weight: q.Weight = value; break;
+                case LegParam.WeightHalfLife: q.WeightHalfLife = value; break;
                 case LegParam.PlantHeight: q.PlantHeight = value; break;
                 case LegParam.ReleaseHeight: q.ReleaseHeight = value; break;
                 case LegParam.PlantRise: q.PlantRise = value; break;

@@ -54,7 +54,9 @@ public class LegTests
     sealed class Rig
     {
         public LegParams Params = LegParams.Standard;
-        public SpringState Pelvis;
+        public LegRigState State;
+        public float Weight = 1f;
+        public SpringState Pelvis => State.Pelvis;
         public readonly LegState[] States;
         public readonly LegPose[] Poses;
         readonly FootShape[] shapes;
@@ -67,7 +69,7 @@ public class LegTests
         }
 
         public Float3 Step(params LegInput[] inputs) =>
-            LegRig.Step(Params, 1f, ref Pelvis, States, inputs, shapes, Float3.Zero, Up, Forward, Frame, Poses);
+            LegRig.Step(Params, 1f, Weight, ref State, States, inputs, shapes, Float3.Zero, Up, Forward, Frame, Poses);
     }
 
     [Fact]
@@ -377,6 +379,28 @@ public class LegTests
         Assert.Equal(calm[1], shaken[1]);
         Assert.Equal(calm[3], shaken[3]);
         Assert.NotEqual(calm[2], shaken[2]);
+    }
+
+    [Fact]
+    public void TurningFootIKOffFadesBackToTheAnimationWithoutAJump()
+    {
+        var rig = new Rig(1);
+        for (var frame = 0; frame < 30; frame++)
+            rig.Step(Leg(new Float3(0f, 0f, 0.003f * frame), Quaternion.Identity, Ground(-0.06f)));
+        var animated = new Float3(0f, 0.09f, 0.09f);
+        Assert.True(Distance(rig.Poses[0].Ankle, animated) > 0.05f);
+        rig.Weight = 0f;
+        var previous = rig.Poses[0].Ankle;
+        var largest = 0f;
+        for (var frame = 30; frame < 90; frame++)
+        {
+            rig.Step(Leg(new Float3(0f, 0f, 0.003f * frame), Quaternion.Identity, Ground(-0.06f)));
+            largest = Math.Max(largest, Distance(rig.Poses[0].Ankle, previous) - 0.003f);
+            previous = rig.Poses[0].Ankle;
+        }
+        Assert.InRange(largest, 0f, 0.012f);
+        Assert.InRange(rig.State.Weight.Value, 0f, 1e-3f);
+        Assert.InRange(Distance(rig.Poses[0].Ankle, new Float3(0f, 0.09f, 0.003f * 89)), 0f, 2e-3f);
     }
 
     [Fact]

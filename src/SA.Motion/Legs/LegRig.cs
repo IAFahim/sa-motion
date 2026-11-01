@@ -12,7 +12,8 @@ namespace SA.Motion.Legs
         public static Float3 Step(
             in LegParams parameters,
             float bodyScale,
-            ref SpringState pelvis,
+            float weight,
+            ref LegRigState rig,
             Span<LegState> states,
             ReadOnlySpan<LegInput> inputs,
             ReadOnlySpan<FootShape> shapes,
@@ -27,13 +28,17 @@ namespace SA.Motion.Legs
             var upAxis = Unit(up, new Float3(0f, 1f, 0f));
             var ahead = Unit(forward - upAxis * Float3.Dot(forward, upAxis), Perpendicular(upAxis));
             var level = floor.IsFinite ? floor : Float3.Zero;
+            var desired = Scalar.IsFinite(weight) ? Clamp(weight, 0f, 1f) : 0f;
+            rig.Weight = rig.Started == 0 ? new SpringState { Value = desired } : CriticalSpring.Step(rig.Weight, desired, p.WeightHalfLife, dt);
+            rig.Started = 1;
+            p.Weight *= Clamp(rig.Weight.Value, 0f, 1f);
             var count = Math.Min(Math.Min(states.Length, inputs.Length), Math.Min(shapes.Length, poses.Length));
             var demand = float.PositiveInfinity;
             for (var i = 0; i < count; i++)
                 demand = Scalar.Min(demand, Plan(p, ref states[i], inputs[i], shapes[i], level, upAxis, dt, ref poses[i]));
             var goal = float.IsPositiveInfinity(demand) ? 0f : Clamp(demand, -p.PelvisDrop, p.PelvisRaise) * p.PelvisWeight * p.Weight;
-            pelvis = CriticalSpring.Step(pelvis, goal, p.PelvisHalfLife, dt);
-            var shift = upAxis * pelvis.Value;
+            rig.Pelvis = CriticalSpring.Step(rig.Pelvis, goal, p.PelvisHalfLife, dt);
+            var shift = upAxis * rig.Pelvis.Value;
             for (var i = 0; i < count; i++)
                 Resolve(p, ref states[i], inputs[i], shapes[i], shift, upAxis, ahead, dt, ref poses[i]);
             return shift;
