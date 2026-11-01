@@ -17,7 +17,12 @@ namespace SA.Motion.Legs
             return height <= p.PlantHeight && rise <= p.PlantRise;
         }
 
-        public static bool Walkable(in GroundHit ground, Float3 up, float maxSlope)
+        public static bool Walkable(in GroundHit ground, Float3 up, float maxSlope) =>
+            WalkableWithin(ground, up, SlopeLimit(maxSlope));
+
+        internal static float SlopeLimit(float maxSlope) => (float)System.Math.Cos(Scalar.IsFinite(maxSlope) ? maxSlope : 0f);
+
+        internal static bool WalkableWithin(in GroundHit ground, Float3 up, float slopeLimit)
         {
             if (ground.Hit == 0 || !ground.Point.IsFinite || !ground.Normal.IsFinite)
                 return false;
@@ -25,7 +30,7 @@ namespace SA.Motion.Legs
             if (!(length > Scalar.MagnitudeEpsilon))
                 return false;
             var cosine = Float3.Dot(ground.Normal / length, up);
-            return cosine >= (float)System.Math.Cos(Scalar.IsFinite(maxSlope) ? maxSlope : 0f) && cosine > 0f;
+            return cosine >= slopeLimit && cosine > 0f;
         }
     }
 }

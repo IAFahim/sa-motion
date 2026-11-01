@@ -34,9 +34,10 @@ namespace SA.Motion.Legs
             rig.Started = 1;
             p.Weight *= Clamp(rig.Weight.Value, 0f, 1f);
             var count = Math.Min(Math.Min(states.Length, inputs.Length), Math.Min(shapes.Length, poses.Length));
+            var slopeLimit = Planting.SlopeLimit(p.MaxWalkableSlope);
             var demand = float.PositiveInfinity;
             for (var i = 0; i < count; i++)
-                demand = Scalar.Min(demand, Plan(p, ref states[i], inputs[i], shapes[i], level, upAxis, dt, ref poses[i]));
+                demand = Scalar.Min(demand, Plan(p, ref states[i], inputs[i], shapes[i], level, upAxis, slopeLimit, dt, ref poses[i]));
             var goal = float.IsPositiveInfinity(demand) ? 0f : Clamp(demand, -p.PelvisDrop, p.PelvisRaise) * p.PelvisWeight * p.Weight;
             rig.Pelvis = CriticalSpring.Step(rig.Pelvis, goal, p.PelvisHalfLife, dt);
             var shift = upAxis * rig.Pelvis.Value;
@@ -90,7 +91,7 @@ namespace SA.Motion.Legs
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        static float Plan(in LegParams p, ref LegState state, in LegInput input, in FootShape shape, Float3 floor, Float3 up, float dt, ref LegPose pose)
+        static float Plan(in LegParams p, ref LegState state, in LegInput input, in FootShape shape, Float3 floor, Float3 up, float slopeLimit, float dt, ref LegPose pose)
         {
             if (!Valid(input, shape))
             {
@@ -103,7 +104,7 @@ namespace SA.Motion.Legs
             var ballArm = Quaternion.Rotate(foot, shape.Ball);
             var heel = input.Ankle + heelArm;
             var ball = input.Ankle + ballArm;
-            var ground = Planting.Walkable(input.Ground, up, p.MaxWalkableSlope);
+            var ground = Planting.WalkableWithin(input.Ground, up, slopeLimit);
             var normal = ground ? Unit(input.Ground.Normal, up) : up;
             var step = ground ? Clamp(Float3.Dot(input.Ground.Point - floor, up), -p.MaxStepHeight, p.MaxStepHeight) * p.TerrainFollow : 0f;
             state.Terrain = CriticalSpring.Step(state.Terrain, step, p.TerrainHalfLife, dt);
