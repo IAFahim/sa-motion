@@ -174,8 +174,7 @@ namespace SA.Motion.Legs
             state.Output.Capture(output, dt);
             var weightedAnkle = ankle + (output.Position - ankle) * p.Weight;
             var weightedFoot = Nlerp(foot, output.Rotation, p.Weight);
-            var bend = SoftReach.KneeDirection(hip, knee, ankle, ahead, p.KneeFollow);
-            var reach = SoftReach.Solve(hip, knee, ankle, weightedAnkle, bend, p.Softness, p.MaxStretch);
+            var reach = SoftReach.Leg(hip, knee, ankle, weightedAnkle, ahead, p.KneeFollow, p.Softness, p.MaxStretch);
             pose = new LegPose
             {
                 Upper = reach.Valid ? Quaternion.Normalize(Quaternion.Multiply(reach.UpperDelta, Quaternion.Normalize(input.Upper))) : Quaternion.Normalize(input.Upper),
