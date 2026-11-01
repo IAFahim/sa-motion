@@ -9,6 +9,8 @@ namespace SA.Motion.Legs
     public static class LegRig
     {
         const float ElapsedCap = 1e6f;
+        const int PreparedParameterCount = 26;
+        const int EveryParameterIsPrepared = 1 / (LegParamsSpec.Count == PreparedParameterCount ? 1 : 0);
 
         public static Float3 Step(
             in LegParams parameters,
