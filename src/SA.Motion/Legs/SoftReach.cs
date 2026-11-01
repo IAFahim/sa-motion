@@ -100,11 +100,13 @@ namespace SA.Motion.Legs
             var preferred = bend.LengthSquared > 0f ? bend : Perpendicular(direction, new Float3(0f, 0f, 1f));
             var side = Sideways(limb, preferred, axis, stretch);
             var along = (upper * upper + span * span - lower * lower) / (2f * span);
-            var height = MathF.Sqrt(Scalar.Max(0f, upper * upper - along * along));
+            var squaredHeight = upper * upper - along * along;
+            var folded = squaredHeight > 0f;
+            var height = folded ? MathF.Sqrt(squaredHeight) : 0f;
             var middle = axis * along + side * height;
             var end = axis * span;
-            var upperTurn = Turn(limb.Upper / limb.UpperLength, middle);
-            var lowerTurn = Turn(Quaternion.Rotate(upperTurn, limb.Lower) / limb.LowerLength, end - middle);
+            var upperTurn = Turn(limb.Upper / limb.UpperLength, middle, folded ? upper : Scalar.Abs(along));
+            var lowerTurn = Turn(Quaternion.Rotate(upperTurn, limb.Lower) / limb.LowerLength, end - middle, folded ? lower : Scalar.Abs(span - along));
             return new LegReach(true, limb.Hip + middle, limb.Hip + end, upperTurn, LegMath.Unit(Quaternion.Multiply(lowerTurn, upperTurn)), stretch);
         }
 
@@ -119,17 +121,15 @@ namespace SA.Motion.Legs
             return side.LengthSquared > 1e-12f ? side / LegMath.Length(side) : Perpendicular(axis, new Float3(0f, 1f, 0f));
         }
 
-        static Quaternion Turn(Float3 from, Float3 to)
+        static Quaternion Turn(Float3 from, Float3 to, float length)
         {
-            var length = LegMath.Length(to);
             if (length < Scalar.MagnitudeEpsilon)
                 return Quaternion.Identity;
-            var direction = to / length;
-            var dot = Float3.Dot(from, direction);
-            if (dot < AntipodeDot)
+            var along = Float3.Dot(from, to);
+            if (along < AntipodeDot * length)
                 return Quaternion.AxisAngle(Perpendicular(from, new Float3(0f, 1f, 0f)), Scalar.Pi);
-            var cross = Float3.Cross(from, direction);
-            return LegMath.Unit(new Quaternion(cross.X, cross.Y, cross.Z, 1f + dot));
+            var cross = Float3.Cross(from, to);
+            return LegMath.Unit(new Quaternion(cross.X, cross.Y, cross.Z, length + along));
         }
 
         static LegReach Unchanged(in Limb limb) =>
