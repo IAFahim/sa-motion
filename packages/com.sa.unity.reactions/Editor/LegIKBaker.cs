@@ -10,11 +10,11 @@ namespace SA.Reactions.Editor
 {
     public static class FootShapes
     {
-        public static FootShape Auto(Transform root, Transform foot, Transform toe)
+        public static FootShape Auto(Transform root, Transform foot, Transform toe, float legLength)
         {
             var up = root.up;
-            var floor = root.position;
-            Vector3 Flat(Vector3 point) => point - up * Vector3.Dot(point - floor, up);
+            var sole = foot.position - up * FootHeight.Resolve(Vector3.Dot(foot.position - root.position, up), legLength);
+            Vector3 Flat(Vector3 point) => point - up * Vector3.Dot(point - sole, up);
             var forward = Vector3.ProjectOnPlane(toe != null ? toe.position - foot.position : root.forward, up);
             if (forward.sqrMagnitude < 1e-8f)
                 forward = Vector3.ProjectOnPlane(root.forward, up);
@@ -45,10 +45,19 @@ namespace SA.Reactions.Editor
             return null;
         }
 
-        public static FootShape Resolve(Transform root, Animator animator, Transform foot, bool left, FootShapeOverride shape) =>
+        public static FootShape Resolve(Transform root, Animator animator, Transform foot, bool left, FootShapeOverride shape, float legLength) =>
             shape.Override
                 ? new FootShape { Heel = Conversions.ToMotion((float3)shape.Heel), Ball = Conversions.ToMotion((float3)shape.Ball) }
-                : Auto(root, foot, Toe(animator, foot, left));
+                : Auto(root, foot, Toe(animator, foot, left), legLength);
+
+        public static string Posed(Transform root, Transform foot, string side, float legLength)
+        {
+            var height = Vector3.Dot(foot.position - root.position, root.up);
+            if (FootHeight.Plausible(height, legLength))
+                return null;
+            var where = height < 0f ? $"{-height:F2} m below" : $"{height:F2} m above";
+            return $"SA: {root.name}: the {side} foot is {where} the character's floor, but a leg this long should have it about {FootHeight.TypicalRatio * legLength:F2} m above. The skeleton in this scene looks posed or moved (an Animator preview, or a saved override on a bone such as the Hip). Heel and ball were estimated instead. Revert those overrides, or set heel and ball by hand in Leg IK Authoring.";
+        }
     }
 
     class LegIKBaker : Baker<RigAuthoring>
@@ -83,14 +92,18 @@ namespace SA.Reactions.Editor
                 DependsOn(upper);
                 DependsOn(lower);
                 DependsOn(foot);
-                legLength += Vector3.Distance(upper.position, lower.position) + Vector3.Distance(lower.position, foot.position);
+                var length = Vector3.Distance(upper.position, lower.position) + Vector3.Distance(lower.position, foot.position);
+                legLength += length;
                 var shape = settings != null ? (left ? settings.LeftFoot : settings.RightFoot) : default;
+                var posed = shape.Override ? null : FootShapes.Posed(authoring.transform, foot, left ? "left" : "right", length);
+                if (posed != null)
+                    Debug.LogWarning(posed, authoring);
                 feet.Add(new LegIKFoot
                 {
                     Upper = GetEntity(upper, TransformUsageFlags.Dynamic),
                     Lower = GetEntity(lower, TransformUsageFlags.Dynamic),
                     Foot = GetEntity(foot, TransformUsageFlags.Dynamic),
-                    Shape = FootShapes.Resolve(authoring.transform, animator, foot, left, shape)
+                    Shape = FootShapes.Resolve(authoring.transform, animator, foot, left, shape, length)
                 });
             }
             var scale = Mathf.Max(0.01f, authoring.transform.lossyScale.y);

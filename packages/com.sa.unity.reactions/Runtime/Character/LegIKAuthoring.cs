@@ -17,7 +17,7 @@ namespace SA.Reactions
 
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RigAuthoring))]
-    public class LegIKAuthoring : MonoBehaviour, ICpuPoseFeature
+    public class LegIKAuthoring : MonoBehaviour, IFootIKSettings
     {
         [Tooltip("Start with leg IK enabled. Gameplay or a timeline toggles the LegIK component at runtime.")]
         public bool StartEnabled = true;

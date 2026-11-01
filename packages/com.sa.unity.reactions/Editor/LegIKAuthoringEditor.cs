@@ -121,7 +121,9 @@ namespace SA.Reactions.Editor
         static FootShapeOverride Fill(Transform root, Animator animator, bool left)
         {
             var foot = animator.GetBoneTransform(left ? HumanBodyBones.LeftFoot : HumanBodyBones.RightFoot);
-            var shape = FootShapes.Auto(root, foot, FootShapes.Toe(animator, foot, left));
+            var knee = animator.GetBoneTransform(left ? HumanBodyBones.LeftLowerLeg : HumanBodyBones.RightLowerLeg);
+            var hip = animator.GetBoneTransform(left ? HumanBodyBones.LeftUpperLeg : HumanBodyBones.RightUpperLeg);
+            var shape = FootShapes.Auto(root, foot, FootShapes.Toe(animator, foot, left), Vector3.Distance(hip.position, knee.position) + Vector3.Distance(knee.position, foot.position));
             return new FootShapeOverride { Override = true, Heel = (Vector3)Conversions.ToUnity(shape.Heel), Ball = (Vector3)Conversions.ToUnity(shape.Ball) };
         }
     }
