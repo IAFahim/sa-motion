@@ -26,7 +26,7 @@ namespace SA.Motion.Legs
         {
             if (ground.Hit == 0 || !ground.Point.IsFinite || !ground.Normal.IsFinite)
                 return false;
-            var length = ground.Normal.Length;
+            var length = LegMath.Length(ground.Normal);
             if (!(length > Scalar.MagnitudeEpsilon))
                 return false;
             var cosine = Float3.Dot(ground.Normal / length, up);

@@ -240,7 +240,7 @@ namespace SA.Motion.Legs
 
         static Float3 Unit(Float3 value, Float3 fallback)
         {
-            var length = value.Length;
+            var length = LegMath.Length(value);
             return value.IsFinite && Scalar.IsFinite(length) && length > Scalar.MagnitudeEpsilon ? value / length : fallback;
         }
 

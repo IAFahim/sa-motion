@@ -65,12 +65,12 @@ namespace SA.Motion.Legs
             if (normal.X == up.X && normal.Y == up.Y && normal.Z == up.Z)
                 return foot;
             var tilt = Quaternion.Canonical(TwoBoneIK.FromTo(up, normal));
-            var sine = tilt.Vector.Length;
+            var sine = LegMath.Length(tilt.Vector);
             if (!Scalar.IsFinite(sine) || sine <= Scalar.MagnitudeEpsilon)
                 return foot;
             var limit = Scalar.IsFinite(maxAngle) ? Scalar.Max(0f, maxAngle) : 0f;
             var angle = Scalar.Min(2f * (float)Math.Atan2(sine, tilt.W), limit) * Unit(weight);
-            return Quaternion.Normalize(Quaternion.Multiply(Quaternion.AxisAngle(tilt.Vector / sine, angle), foot));
+            return LegMath.Unit(Quaternion.Multiply(Quaternion.AxisAngle(tilt.Vector / sine, angle), foot));
         }
 
         static float Unit(float value) => !Scalar.IsFinite(value) ? 0f : value < 0f ? 0f : value > 1f ? 1f : value;
