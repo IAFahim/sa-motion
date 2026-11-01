@@ -89,6 +89,7 @@ namespace SA.Motion.Legs
             return bounds.ScalesWithBody ? clamped * factor : clamped;
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         static float Plan(in LegParams p, ref LegState state, in LegInput input, in FootShape shape, Float3 floor, Float3 up, float dt, ref LegPose pose)
         {
             if (!Valid(input, shape))
@@ -147,6 +148,7 @@ namespace SA.Motion.Legs
             return Float3.Dot(pose.Ankle - input.Ankle, up);
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         static void Resolve(in LegParams p, ref LegState state, in LegInput input, in FootShape shape, Float3 shift, Float3 up, Float3 ahead, float dt, ref LegPose pose)
         {
             if (state.HasPrevious == 0)

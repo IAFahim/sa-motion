@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using SA.Motion.Numerics;
 
 namespace SA.Motion.Legs
@@ -78,6 +79,7 @@ namespace SA.Motion.Legs
             return Normalize(fallback + (animated - fallback) * weight, animated);
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         static LegReach Reach(in Limb limb, Float3 goal, Float3 bend, float softness, float maxStretch)
         {
             var length = limb.UpperLength + limb.LowerLength;
