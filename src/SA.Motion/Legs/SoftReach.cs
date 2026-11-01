@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.CompilerServices;
 using SA.Motion.Numerics;
 
 namespace SA.Motion.Legs
@@ -33,7 +32,7 @@ namespace SA.Motion.Legs
         {
             if (!hip.IsFinite || !knee.IsFinite || !ankle.IsFinite || !goal.IsFinite || !bend.IsFinite)
                 return new LegReach(false, knee, ankle, Quaternion.Identity, Quaternion.Identity, 1f);
-            var length = Length(bend);
+            var length = LegMath.Length(bend);
             var unitBend = length > Scalar.MagnitudeEpsilon ? bend / length : Float3.Zero;
             return Reach(Measure(hip, knee, ankle), goal, unitBend, softness, maxStretch);
         }
@@ -51,15 +50,15 @@ namespace SA.Motion.Legs
             var upper = knee - hip;
             var lower = ankle - knee;
             var axis = ankle - hip;
-            var axisLength = Length(axis);
+            var axisLength = LegMath.Length(axis);
             return new Limb(
                 hip,
                 knee,
                 ankle,
                 upper,
                 lower,
-                Length(upper),
-                Length(lower),
+                LegMath.Length(upper),
+                LegMath.Length(lower),
                 Scalar.IsFinite(axisLength) && axisLength > Scalar.MagnitudeEpsilon ? axis / axisLength : new Float3(0f, -1f, 0f),
                 axisLength);
         }
@@ -67,7 +66,7 @@ namespace SA.Motion.Legs
         static Float3 Bend(in Limb limb, Float3 forward, float follow)
         {
             var bent = limb.Upper - limb.Axis * Float3.Dot(limb.Upper, limb.Axis);
-            var bentLength = Length(bent);
+            var bentLength = LegMath.Length(bent);
             var total = limb.UpperLength + limb.LowerLength;
             var bends = Scalar.IsFinite(total) && bentLength > 1e-3f * total;
             var weight = Unit(follow);
@@ -85,7 +84,7 @@ namespace SA.Motion.Legs
             if (!Scalar.IsFinite(length) || limb.UpperLength <= BoneEpsilon || limb.LowerLength <= BoneEpsilon)
                 return Unchanged(limb);
             var toGoal = goal - limb.Hip;
-            var distance = Length(toGoal);
+            var distance = LegMath.Length(toGoal);
             var direction = distance > BoneEpsilon ? toGoal / distance : limb.Axis;
             var cap = Scalar.IsFinite(maxStretch) ? Scalar.Max(1f, Scalar.Min(maxStretch, 2f)) : 1f;
             var stretch = Scalar.Max(1f, Scalar.Min(distance / length, cap));
@@ -104,7 +103,7 @@ namespace SA.Motion.Legs
             var end = axis * span;
             var upperTurn = Turn(limb.Upper / limb.UpperLength, middle);
             var lowerTurn = Turn(Quaternion.Rotate(upperTurn, limb.Lower) / limb.LowerLength, end - middle);
-            return new LegReach(true, limb.Hip + middle, limb.Hip + end, upperTurn, Unit(Quaternion.Multiply(lowerTurn, upperTurn)), stretch);
+            return new LegReach(true, limb.Hip + middle, limb.Hip + end, upperTurn, LegMath.Unit(Quaternion.Multiply(lowerTurn, upperTurn)), stretch);
         }
 
         static Float3 Sideways(in Limb limb, Float3 preferred, Float3 axis, float stretch)
@@ -115,12 +114,12 @@ namespace SA.Motion.Legs
                 var bent = limb.Upper * stretch;
                 side = bent - axis * Float3.Dot(bent, axis);
             }
-            return side.LengthSquared > 1e-12f ? side / Length(side) : Perpendicular(axis, new Float3(0f, 1f, 0f));
+            return side.LengthSquared > 1e-12f ? side / LegMath.Length(side) : Perpendicular(axis, new Float3(0f, 1f, 0f));
         }
 
         static Quaternion Turn(Float3 from, Float3 to)
         {
-            var length = Length(to);
+            var length = LegMath.Length(to);
             if (length < Scalar.MagnitudeEpsilon)
                 return Quaternion.Identity;
             var direction = to / length;
@@ -128,28 +127,15 @@ namespace SA.Motion.Legs
             if (dot < AntipodeDot)
                 return Quaternion.AxisAngle(Perpendicular(from, new Float3(0f, 1f, 0f)), Scalar.Pi);
             var cross = Float3.Cross(from, direction);
-            return Unit(new Quaternion(cross.X, cross.Y, cross.Z, 1f + dot));
+            return LegMath.Unit(new Quaternion(cross.X, cross.Y, cross.Z, 1f + dot));
         }
 
         static LegReach Unchanged(in Limb limb) =>
             new LegReach(false, limb.Knee, limb.Ankle, Quaternion.Identity, Quaternion.Identity, 1f);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static float Length(Float3 value) => MathF.Sqrt(Float3.Dot(value, value));
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static Quaternion Unit(Quaternion q)
-        {
-            var squared = Quaternion.Dot(q, q);
-            if (!Scalar.IsFinite(squared) || squared <= Scalar.MagnitudeEpsilon * Scalar.MagnitudeEpsilon)
-                return Quaternion.Identity;
-            var inverse = 1f / MathF.Sqrt(squared);
-            return new Quaternion(q.X * inverse, q.Y * inverse, q.Z * inverse, q.W * inverse);
-        }
-
         static Float3 Normalize(Float3 value, Float3 fallback)
         {
-            var length = Length(value);
+            var length = LegMath.Length(value);
             return Scalar.IsFinite(length) && length > Scalar.MagnitudeEpsilon ? value / length : fallback;
         }
 

@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using SA.Motion.Inertialization;
 using SA.Motion.Mechanics;
 using SA.Motion.Numerics;
@@ -96,9 +97,11 @@ namespace SA.Motion.Legs
                 pose = Passthrough(input);
                 return float.PositiveInfinity;
             }
-            var foot = Quaternion.Normalize(input.Foot);
-            var heel = input.Ankle + Quaternion.Rotate(foot, shape.Heel);
-            var ball = input.Ankle + Quaternion.Rotate(foot, shape.Ball);
+            var foot = LegMath.Unit(input.Foot);
+            var heelArm = Quaternion.Rotate(foot, shape.Heel);
+            var ballArm = Quaternion.Rotate(foot, shape.Ball);
+            var heel = input.Ankle + heelArm;
+            var ball = input.Ankle + ballArm;
             var ground = Planting.Walkable(input.Ground, up, p.MaxWalkableSlope);
             var normal = ground ? Unit(input.Ground.Normal, up) : up;
             var step = ground ? Clamp(Float3.Dot(input.Ground.Point - floor, up), -p.MaxStepHeight, p.MaxStepHeight) * p.TerrainFollow : 0f;
@@ -109,7 +112,7 @@ namespace SA.Motion.Legs
                 ? Scalar.Min(Float3.Dot(heel + lift - input.Ground.Point, normal), Float3.Dot(ball + lift - input.Ground.Point, normal))
                 : float.PositiveInfinity;
             var rise = state.HasPrevious != 0 && dt > 0f ? (clearance - state.PreviousClearance) / dt : 0f;
-            var contact = input.Ankle + lift + Quaternion.Rotate(foot, Fulcrum.Pivot(shape, p.TurnPivot));
+            var contact = input.Ankle + lift + (heelArm + (ballArm - heelArm) * Unit(p.TurnPivot));
             var wasPlanted = state.Planted != 0;
             var drift = wasPlanted ? Flat(contact - state.Anchor, state.AnchorNormal).Length : 0f;
             var plant = Planting.Decide(wasPlanted, ground, height, rise, drift, input.ContactAuthored, input.Contact, p);
@@ -117,7 +120,7 @@ namespace SA.Motion.Legs
             if (plant && !wasPlanted)
             {
                 var current = state.Output.Count != 0 ? state.Output.Current.Position : input.Ankle + lift;
-                var anchor = current - Fulcrum.Ankle(shape, Float3.Zero, normal, aligned, p.TurnPivot, p.HeelRoll, p.BallRoll, p.RollBand);
+                var anchor = current - Fulcrum.Ankle(Float3.Zero, normal, Quaternion.Rotate(aligned, shape.Heel), Quaternion.Rotate(aligned, shape.Ball), p.TurnPivot, p.HeelRoll, p.BallRoll, p.RollBand);
                 state.Anchor = anchor - normal * Float3.Dot(anchor - input.Ground.Point, normal);
                 state.AnchorNormal = normal;
             }
@@ -140,15 +143,15 @@ namespace SA.Motion.Legs
                 return ground && height <= p.ReleaseHeight ? state.Terrain.Value : float.PositiveInfinity;
             }
             pose.Foot = aligned;
-            pose.Ankle = Fulcrum.Ankle(shape, state.Anchor, state.AnchorNormal, aligned, p.TurnPivot, p.HeelRoll, p.BallRoll, p.RollBand);
+            pose.Ankle = Fulcrum.Ankle(state.Anchor, state.AnchorNormal, Quaternion.Rotate(aligned, shape.Heel), Quaternion.Rotate(aligned, shape.Ball), p.TurnPivot, p.HeelRoll, p.BallRoll, p.RollBand);
             return Float3.Dot(pose.Ankle - input.Ankle, up);
         }
 
         static void Resolve(in LegParams p, ref LegState state, in LegInput input, in FootShape shape, Float3 shift, Float3 up, Float3 ahead, float dt, ref LegPose pose)
         {
-            if (!Valid(input, shape))
+            if (state.HasPrevious == 0)
                 return;
-            var foot = Quaternion.Normalize(input.Foot);
+            var foot = LegMath.Unit(input.Foot);
             var hip = input.Hip + shift;
             var knee = input.Knee + shift;
             var ankle = input.Ankle + shift;
@@ -169,7 +172,7 @@ namespace SA.Motion.Legs
                 state.Blend = PoseTransition.Create(state.Output, target, p.BlendSeconds);
                 state.BlendElapsed = 0f;
             }
-            var output = PoseTransition.Apply(ref state.Blend, target, state.BlendElapsed);
+            var output = Settled(state.Blend, state.BlendElapsed) ? target : PoseTransition.Apply(ref state.Blend, target, state.BlendElapsed);
             state.BlendElapsed = Scalar.Min(state.BlendElapsed + dt, ElapsedCap);
             state.Output.Capture(output, dt);
             var weightedAnkle = ankle + (output.Position - ankle) * p.Weight;
@@ -177,8 +180,8 @@ namespace SA.Motion.Legs
             var reach = SoftReach.Leg(hip, knee, ankle, weightedAnkle, ahead, p.KneeFollow, p.Softness, p.MaxStretch);
             pose = new LegPose
             {
-                Upper = reach.Valid ? Quaternion.Normalize(Quaternion.Multiply(reach.UpperDelta, Quaternion.Normalize(input.Upper))) : Quaternion.Normalize(input.Upper),
-                Lower = reach.Valid ? Quaternion.Normalize(Quaternion.Multiply(reach.LowerDelta, Quaternion.Normalize(input.Lower))) : Quaternion.Normalize(input.Lower),
+                Upper = LegMath.Unit(reach.Valid ? Quaternion.Multiply(reach.UpperDelta, input.Upper) : input.Upper),
+                Lower = LegMath.Unit(reach.Valid ? Quaternion.Multiply(reach.LowerDelta, input.Lower) : input.Lower),
                 Foot = weightedFoot,
                 Ankle = reach.Valid ? reach.Ankle : ankle,
                 Contact = planted ? state.Anchor : weightedAnkle + Quaternion.Rotate(weightedFoot, Fulcrum.Pivot(shape, p.TurnPivot)),
@@ -187,6 +190,11 @@ namespace SA.Motion.Legs
                 Solved = (byte)(reach.Valid ? 1 : 0)
             };
         }
+
+        static bool Settled(in PoseTransition blend, float elapsed) =>
+            Finished(blend.Position.Decay.Duration, elapsed) && Finished(blend.Rotation.Decay.Duration, elapsed) && Finished(blend.LogScale.Decay.Duration, elapsed);
+
+        static bool Finished(float duration, float elapsed) => duration <= Scalar.DurationEpsilon || elapsed >= duration;
 
         static bool Valid(in LegInput input, in FootShape shape) =>
             input.Hip.IsFinite && input.Knee.IsFinite && input.Ankle.IsFinite && shape.Heel.IsFinite && shape.Ball.IsFinite
@@ -224,6 +232,24 @@ namespace SA.Motion.Legs
         static Float3 Perpendicular(Float3 axis) =>
             Unit(Float3.Cross(axis, Math.Abs(axis.X) < 0.8f ? new Float3(1f, 0f, 0f) : new Float3(0f, 0f, 1f)), new Float3(0f, 0f, 1f));
 
+        static float Unit(float value) => !Scalar.IsFinite(value) ? 0f : value < 0f ? 0f : value > 1f ? 1f : value;
+
         static float Clamp(float value, float low, float high) => value < low ? low : value > high ? high : value;
+    }
+
+    internal static class LegMath
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float Length(Float3 value) => MathF.Sqrt(Float3.Dot(value, value));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Quaternion Unit(Quaternion q)
+        {
+            var squared = Quaternion.Dot(q, q);
+            if (!Scalar.IsFinite(squared) || squared <= Scalar.MagnitudeEpsilon * Scalar.MagnitudeEpsilon)
+                return Quaternion.Identity;
+            var inverse = 1f / MathF.Sqrt(squared);
+            return new Quaternion(q.X * inverse, q.Y * inverse, q.Z * inverse, q.W * inverse);
+        }
     }
 }
