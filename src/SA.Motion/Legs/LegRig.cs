@@ -23,7 +23,7 @@ namespace SA.Motion.Legs
             float deltaTime,
             Span<LegPose> poses)
         {
-            var p = LegParamsSpec.Scaled(LegParamsSpec.Sanitize(parameters), bodyScale);
+            var p = Prepared(parameters, bodyScale);
             var dt = Scalar.IsFinite(deltaTime) && deltaTime > 0f ? deltaTime : 0f;
             var upAxis = Unit(up, new Float3(0f, 1f, 0f));
             var ahead = Unit(forward - upAxis * Float3.Dot(forward, upAxis), Perpendicular(upAxis));
@@ -42,6 +42,50 @@ namespace SA.Motion.Legs
             for (var i = 0; i < count; i++)
                 Resolve(p, ref states[i], inputs[i], shapes[i], shift, upAxis, ahead, dt, ref poses[i]);
             return shift;
+        }
+
+        static LegParams Prepared(in LegParams parameters, float bodyScale)
+        {
+            var standard = LegParams.Standard;
+            var factor = Scalar.IsFinite(bodyScale) && bodyScale > 0f ? bodyScale : 1f;
+            var p = parameters;
+            p.Weight = Bounded(LegParam.Weight, parameters.Weight, standard.Weight, factor);
+            p.WeightHalfLife = Bounded(LegParam.WeightHalfLife, parameters.WeightHalfLife, standard.WeightHalfLife, factor);
+            p.PlantHeight = Bounded(LegParam.PlantHeight, parameters.PlantHeight, standard.PlantHeight, factor);
+            p.ReleaseHeight = Bounded(LegParam.ReleaseHeight, parameters.ReleaseHeight, standard.ReleaseHeight, factor);
+            p.PlantRise = Bounded(LegParam.PlantRise, parameters.PlantRise, standard.PlantRise, factor);
+            p.ReleaseRise = Bounded(LegParam.ReleaseRise, parameters.ReleaseRise, standard.ReleaseRise, factor);
+            p.PinRadius = Bounded(LegParam.PinRadius, parameters.PinRadius, standard.PinRadius, factor);
+            p.ReleaseDistance = Bounded(LegParam.ReleaseDistance, parameters.ReleaseDistance, standard.ReleaseDistance, factor);
+            p.BlendSeconds = Bounded(LegParam.BlendSeconds, parameters.BlendSeconds, standard.BlendSeconds, factor);
+            p.TurnPivot = Bounded(LegParam.TurnPivot, parameters.TurnPivot, standard.TurnPivot, factor);
+            p.HeelRoll = Bounded(LegParam.HeelRoll, parameters.HeelRoll, standard.HeelRoll, factor);
+            p.BallRoll = Bounded(LegParam.BallRoll, parameters.BallRoll, standard.BallRoll, factor);
+            p.RollBand = Bounded(LegParam.RollBand, parameters.RollBand, standard.RollBand, factor);
+            p.SlopeAlign = Bounded(LegParam.SlopeAlign, parameters.SlopeAlign, standard.SlopeAlign, factor);
+            p.MaxSlopeAlign = Bounded(LegParam.MaxSlopeAlign, parameters.MaxSlopeAlign, standard.MaxSlopeAlign, factor);
+            p.MaxWalkableSlope = Bounded(LegParam.MaxWalkableSlope, parameters.MaxWalkableSlope, standard.MaxWalkableSlope, factor);
+            p.TerrainFollow = Bounded(LegParam.TerrainFollow, parameters.TerrainFollow, standard.TerrainFollow, factor);
+            p.TerrainHalfLife = Bounded(LegParam.TerrainHalfLife, parameters.TerrainHalfLife, standard.TerrainHalfLife, factor);
+            p.MaxStepHeight = Bounded(LegParam.MaxStepHeight, parameters.MaxStepHeight, standard.MaxStepHeight, factor);
+            p.Softness = Bounded(LegParam.Softness, parameters.Softness, standard.Softness, factor);
+            p.MaxStretch = Bounded(LegParam.MaxStretch, parameters.MaxStretch, standard.MaxStretch, factor);
+            p.KneeFollow = Bounded(LegParam.KneeFollow, parameters.KneeFollow, standard.KneeFollow, factor);
+            p.PelvisWeight = Bounded(LegParam.PelvisWeight, parameters.PelvisWeight, standard.PelvisWeight, factor);
+            p.PelvisDrop = Bounded(LegParam.PelvisDrop, parameters.PelvisDrop, standard.PelvisDrop, factor);
+            p.PelvisRaise = Bounded(LegParam.PelvisRaise, parameters.PelvisRaise, standard.PelvisRaise, factor);
+            p.PelvisHalfLife = Bounded(LegParam.PelvisHalfLife, parameters.PelvisHalfLife, standard.PelvisHalfLife, factor);
+            p.ReleaseHeight = Scalar.Max(p.ReleaseHeight, p.PlantHeight);
+            p.ReleaseRise = Scalar.Max(p.ReleaseRise, p.PlantRise);
+            p.ReleaseDistance = Scalar.Max(p.ReleaseDistance, p.PinRadius);
+            return p;
+        }
+
+        static float Bounded(LegParam field, float value, float fallback, float factor)
+        {
+            var bounds = LegParamsSpec.Bounds(field);
+            var clamped = bounds.Clamp(value, fallback);
+            return bounds.ScalesWithBody ? clamped * factor : clamped;
         }
 
         static float Plan(in LegParams p, ref LegState state, in LegInput input, in FootShape shape, Float3 floor, Float3 up, float dt, ref LegPose pose)
