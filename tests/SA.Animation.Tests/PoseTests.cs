@@ -546,6 +546,20 @@ public class PoseSamplingTests
     }
 
     [Fact]
+    public void AnUnevenFractionWeighsTheLaterFrameByThatFraction()
+    {
+        var samples = TwoBoneClip();
+        Assert.Equal(0.5f, ClipSampling.At(samples, 2, 1, 0.25f).Position.X, 5);
+        Assert.Equal(1.5f, ClipSampling.At(samples, 2, 1, 0.75f).Position.X, 5);
+        Assert.Equal(2.5f, ClipSampling.At(samples, 2, 1, 1.25f).Position.X, 5);
+        Assert.Equal(3.5f, ClipSampling.At(samples, 2, 1, 1.75f).Position.X, 5);
+        Assert.Equal(0.75f, ClipSampling.At(samples, 2, 0, 0.75f).Position.Z, 5);
+        var expected = PoseMath.Lerp(samples[1], samples[3], 0.25f);
+        Assert.InRange(PoseFixtures.Gap(ClipSampling.At(samples, 2, 1, 1.25f), PoseMath.Lerp(samples[3], samples[5], 0.25f)), 0f, 1e-6f);
+        Assert.InRange(PoseFixtures.Gap(ClipSampling.At(samples, 2, 1, 0.25f), expected), 0f, 1e-6f);
+    }
+
+    [Fact]
     public void SamplingBlendsRotationAlongTheShortArc()
     {
         var samples = new[]
