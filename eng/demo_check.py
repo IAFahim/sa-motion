@@ -1,6 +1,7 @@
 import csv
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -13,18 +14,37 @@ def unity(*args, timeout=120):
     return subprocess.run(["unity", "command", "--result-only", f"--timeout={timeout}", *args], cwd=project, capture_output=True, text=True)
 
 
+SET_STOP = """
+foreach (var behaviour in UnityEngine.Object.FindObjectsByType<UnityEngine.MonoBehaviour>(UnityEngine.FindObjectsInactive.Include))
+{
+    if (behaviour == null || behaviour.GetType().Name != "ReactionsDemo")
+        continue;
+    var serialized = new UnityEditor.SerializedObject(behaviour);
+    serialized.FindProperty("StopAfterSeconds").floatValue = SECONDS;
+    serialized.ApplyModifiedPropertiesWithoutUndo();
+    return "stop after " + SECONDS;
+}
+return "no ReactionsDemo in the open scene";
+"""
+
+
+def set_stop_after(seconds):
+    with tempfile.TemporaryDirectory() as directory:
+        code = Path(directory) / "stop.cs"
+        code.write_text(SET_STOP.replace("SECONDS", f"{float(seconds)}f"))
+        return unity("script", "eval_file", "--file", str(code)).stdout
+
+
 unity("scene", "open", "--path", scene)
 telemetry.unlink(missing_ok=True)
-stop_after = project / "Temp/sa/demo_stop_after.txt"
-stop_after.parent.mkdir(parents=True, exist_ok=True)
-stop_after.write_text(sys.argv[1] if len(sys.argv) > 1 else "30")
+print(set_stop_after(sys.argv[1] if len(sys.argv) > 1 else "30").strip())
 unity("editor.playmode", "start")
 for _ in range(480):
     if telemetry.exists():
         break
     time.sleep(0.5)
-stop_after.unlink(missing_ok=True)
 unity("editor.playmode", "stop")
+unity("scene", "open", "--path", scene)
 rows = [{k: (float(v) if k not in ("mode", "event") else v) for k, v in row.items()} for row in csv.DictReader(telemetry.open())]
 if not rows:
     print("no telemetry rows")

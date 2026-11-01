@@ -16,6 +16,33 @@ An engine-agnostic .NET motion library plus thin Unity adapters. The goal is tha
 
 Default to `src/`. Move code to `packages/` only when it cannot compile without Unity, and say why in your handoff note.
 
+## Build it for a person
+
+The owner works in the Unity Editor with a mouse. A change that passes every test and still costs them time has failed. Each rule below is a real incident from this repository.
+
+### Before you say "done", do the person's walk
+
+1. Open the scene the owner opens and press Play on its defaults. Everything starts where it should, and nothing moves that was not told to.
+2. Do the task as they would: click the button, tick the box, read the Console and the inspector. Every time you had to open a file, guess, or run a script to learn what happened, the person would be stuck at the same place. Fix that place, not the symptom.
+3. For every control you touched, name what changes on screen. If nothing visible changes, add feedback, or say on screen why not.
+4. Reload the scene from disk and Play again. Anything that only works in your session is broken.
+
+### Rules
+
+| Rule | Incident |
+|---|---|
+| **Leave no test harness where the owner works.** Probes, telemetry drivers and fake input run from an Editor menu item, a scratch scene in `Assets/_Scratch/`, or a test. Delete them when the job ends. Never in a demo scene, a prefab, or a sample the demo builder uses. `eng/check_source_rules.py` fails on a probe in a demo scene. | A `LegIKProbe` left in `ReactionsDemo.unity` moved Kyle 29 m back on Play and drove him forward like root motion. The owner thought the animation was broken |
+| **No hidden switches.** Behaviour never depends on a file in `Temp/`, an environment variable, or a setting with no visible control. A control is an inspector field or a menu item with a checkmark. `eng/check_source_rules.py` fails on runtime or sample code that reads `Temp/` or the environment | `Temp/sa/leg_probe_mode.txt` silently turned the solver off. `Temp/sa/demo_stop_after.txt` silently ended Play mode |
+| **A feature that cannot work says so.** A checkbox either changes something visible or shows why it cannot: inspector help box, bake warning, or a Console line naming the object and the fix. Silence is a bug | Plant feet on ground did nothing on Kyle, and said nothing. A saved Hip override made the bake see the skeleton 1.06 m low, so every foot looked a metre off the ground |
+| **Make bakes robust and loud.** A baker validates what it reads from the scene (poses, scales, missing bones), repairs what it can, and warns with the object and the fix when it cannot. Run a real bake of a real scene before you call a baker done: synthetic tests do not bake | The leg solver passed 22 portable and 4 Unity tests while the demo's baked foot shape was 0.95 m long |
+| **A feature that works says so.** After the person acts, something confirms it: a Console line naming the object, a marker in the Scene view | Idle foot IK moves feet by millimetres. The owner saw nothing and concluded it was off |
+| **Buttons report.** A button that changes things logs what it found and changed, in plain words, with the object as the Console context. Nothing selected or nothing found is a warning, not silence | Set Up Character ran silently |
+| **Put the next step where the eye is.** If the person must add a component to continue, the inspector has a button for it | Motions had to be found by name in Add Component |
+| **Remove your own mess without asking.** Delete the leftover, then tell the owner what went and what they must click (for example Reload on the "scene changed on disk" dialog) | The probe's removal was offered as a question, which cost the owner an interruption |
+| **Look before you touch what the owner has open.** Before you edit a scene, prefab or script: `eng/unity.sh eval` a state check (`isPlaying`, open scenes, `isDirty`). Never start a second Editor, never stop theirs, and list the files you changed under them | The owner's Editor had been open for 11 hours when a scene and a script changed on disk under it |
+
+Also: press Play on defaults must give a sensible result, so nothing teleports, spawns far away or starts moving unasked. Labels, tooltips and messages say what happens on screen and which control to use, and numbers carry units. Editor actions go through `Undo`.
+
 ## Code rules (checked by `python3 eng/check_source_rules.py`)
 
 - No comments. Names carry the meaning. Explanations go in `docs/`.
@@ -79,12 +106,18 @@ unity command --result-only [--timeout <seconds>] <group> <name> [--arg value ..
 
 1. **Compile and test.** `eng/unity.sh compile` (about 5 minutes, exit 0 on success), then `eng/unity.sh test SA.Reactions.Tests`. Assemblies are listed in `eng/unity-test-assemblies.txt`.
 2. **Change any asset or setting in the Editor.** Write a `.cs` file under `$CLAUDE_JOB_DIR/tmp` or `/tmp`, never inside the Unity project, and run `eng/unity.sh eval <file>`. Example: the Humanoid import of the Quaternius libraries set `ModelImporter.animationType = Human`, `avatarSetup = CreateFromThisModel`, `motionNodeName = "root"`, then `SaveAndReimport()` and returned the avatar validity as the string.
-3. **Measure a running simulation.** Eval cannot watch Play mode. Have the Play-mode script write a CSV to `Temp/sa/`, then run `scene open`, `editor.playmode start`, wait, `editor.playmode stop`, and read the file. `eng/demo_check.py <game_seconds> [scene]` is the template: it makes the demo stop itself at a game-time target (a file `Temp/sa/demo_stop_after.txt`, because wall time lies when the Editor is throttled), then prints eight pass/fail lines from `Temp/sa/demo_telemetry.csv`.
+3. **Measure a running simulation.** Eval cannot watch Play mode. Have the Play-mode script write a CSV to `Temp/sa/`, then run `scene open`, `editor.playmode start`, wait, `editor.playmode stop`, and read the file. `eng/demo_check.py <game_seconds> [scene]` is the template: it makes the demo stop itself at a game-time target (the visible `Stop After Seconds` field on the Reactions Demo component, set by the script and cleared by reopening the scene, because wall time lies when the Editor is throttled), then prints eight pass/fail lines from `Temp/sa/demo_telemetry.csv`.
 4. **Show the owner.** Start with `SA_UNITY_WINDOW=1`, open the scene in Edit mode, tell them to press Play. Do not stop their Editor.
 5. **Debug output.** `Debug.Log` from eval rarely arrives. Write files under `Temp/sa/` and read them. Use `console get --tail 50` for compile errors.
 
 ### Traps
 
+- One failed `unity command` does not mean the Editor is closed. It fails (exit 6) while the Editor is busy importing or reloading. Check `ps -eo pid,etime,cmd | grep '[p]rojectpath /home/i/ruk2'` and retry before you decide, and never start a second Editor on a guess.
+- A saved override on a bone in a scene instance (for example the Hip moved to 0) changes the skeleton the bakers see, because bakers read the authoring transforms. `FootShapes.Posed` warns about it. Never save a scene while a character is posed by an Animator preview or a clip sample.
+- The `unity` CLI can print a hint line after its JSON. Parse only the first JSON object, as `eng/unity.sh` does.
+- `UnityEngine.Time.captureDeltaTime = 1f / 60f` through eval gives a fixed frame time on a throttled Editor, which makes foot and physics timing trustworthy. It persists, so reset it to 0 and stop Play when you finish.
+- Closed SubScenes bake in an import worker. Its warnings and errors reach the Console as `[Worker2]` lines, but a plain `Debug.Log` from a baker only reaches `Logs/AssetImportWorker*.log`. Warn with `LogWarning` when a person must see it.
+- Editing or deleting a scene or script on disk while the Editor has it open leaves the Editor holding the old one in memory. After the compile, reopen the scene (`UnityEditor.SceneManagement.EditorSceneManager.OpenScene` through `eng/unity.sh eval`) and tell the owner. If they save the stale scene first, the deleted component comes back as a missing script.
 - A MonoBehaviour must live in a file with its own name, or the prefab silently loses it.
 - Baker changes do not re-bake an existing prefab or subscene until a value on the prefab changes.
 - Bakers write only their own entity. Other entities need a `[TemporaryBakingType]` buffer and a baking system.
@@ -106,9 +139,10 @@ Dated 2026-10-31. Numbers come from runs on this machine unless marked not measu
 | Two library builds (2026-11-01) | Every `src/` project builds for net10.0 (AOT and trim analyzers on) and netstandard2.1. `eng/dotnet_test.sh` runs each suite against both builds, and the ABI test asserts the framework of the build under test. Unity loads the netstandard2.1 DLLs |
 | Fulcrum leg solver (2026-11-01) | `src/SA.Motion/Legs`: terrain offset, pin with drag, heel and ball roll, slope alignment, inertialized plant and release, pelvis drop, soft reach, smoothed weight, presets with Gentle as the default. 22 `LegTests` plus a doc-sync test. 242 ns per leg single-threaded on .NET 10 x64 after packet L4 (was about 687). `LegProfileText` reads and writes profiles as text (L2). See `docs/legs.md` |
 | Portable animation core (2026-11-01) | `src/SA.Animation`: motion selection, phase, playback and transition commands over fixed-capacity spans (A2), pose math, clip sampling, layered evaluation, hierarchy (A1). 126 tests on both builds, parity with copies of the Unity code. Unity does not call it yet except for `MotionSelect` and `PlayRate` |
-| Motions and LegIK in Unity (2026-11-01) | Enableable `SingleMotion`, `LinearMotion`, `PlanarMotion` and `DirectionalMotion` (com.sa.unity `MotionSystem`, one clip with hysteresis, an inertialized cut, gait phase kept, time-driven single) plus the enableable `LegIK` feature with a per-clip Foot IK tick. SA.Tests 53, SA.Reactions.Tests 22. Not tried in Play mode. See `docs/workflow.md` |
+| Motions and LegIK in Unity (2026-11-01) | Enableable `SingleMotion`, `LinearMotion`, `PlanarMotion` and `DirectionalMotion` (com.sa.unity `MotionSystem`, one clip with hysteresis, an inertialized cut, gait phase kept, time-driven single) plus the enableable `LegIK` feature with a per-clip Foot IK tick. SA.Tests 53, SA.Reactions.Tests 28. `LegIK` tried in Play mode on the demo's Kyle at idle (both feet plant); the motions are not tried in Play mode. See `docs/workflow.md` |
+| Kyle's feet never planting (2026-11-01) | Cause: a saved Hip override in `ReactionsDemoSub.unity` put the skeleton 1.06 m low at bake time, so the baked heel and ball were 0.95 m from the ankle. Fixed by removing the override and by `FootHeight` in the baker, which now estimates a sane shape and warns. `LegIKWatchSystem` explains a missing plant in the Console after 3 s. See `docs/legs.md` |
 | Portable libraries (`src/`) | Motion 159, Humanoid 73, ReactionControl 110, Harness 14 tests, all passing at `cbc0bb0`. Balance and Evaluation tests were added after |
-| Unity packages | `SA.Tests`, `SA.Motion.Unity.Tests`, `SA.Reactions.Tests` passing. Reactions has 17 tests |
+| Unity packages | `SA.Tests` 53, `SA.Motion.Unity.Tests` 3, `SA.Reactions.Tests` 28, `SA.IK.Tests` 3 passing |
 | Inertialized transitions (CPU) | Verified live on Kyle, with a test that the switch frame does not pop (`TransitionTests`) |
 | U5 character setup and IK | `Tools/SA/Set Up Character` discovers bones, Avatar and model/controller clips, converts all skin materials, and exposes animation packs plus per-clip in-place. The UAL mannequin now animates both material render entities, with 86 discovered clips and zero manual clips/bones. A baked UAL2 walk plays on the UAL1 target. Optional `com.sa.unity.ik` provides head look and two-bone reach; ground foot locking and hit flinches live in Reactions. See `docs/handoff/U5.md` for exact validation and limits |
 | Kyle Run/Sprint U5 | The demo preserves gait phase with `TransitionPlayback.PlaySynced`. Abrupt foot-lock release was also producing thigh spikes; foot corrections now blend in/out over 0.1 seconds. Live capture at roughly 60 Hz showed the largest leg step in the checked sprint window drop from about 50 degrees to 25.5; the latter is dominated by the source clip's roughly 24.8-degree ankle step. This is a visual-correctness measurement, not a performance benchmark |

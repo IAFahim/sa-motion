@@ -19,14 +19,14 @@ recompile() {
     grep -q '"status": "completed"' <<<"$status" && break
     sleep 3
   done
-  python3 -c 'import json,sys; d=json.loads(sys.stdin.read()); print("compile failed:", d.get("failed")); [print(e) for e in d.get("errors", [])[:25]]; sys.exit(1 if d.get("failed") else 0)' <<<"$status"
+  python3 -c 'import json,sys; t=sys.stdin.read(); d=json.JSONDecoder().raw_decode(t[t.index("{"):])[0]; print("compile failed:", d.get("failed")); [print(e) for e in d.get("errors", [])[:25]]; sys.exit(1 if d.get("failed") else 0)' <<<"$status"
 }
 
 test_assembly() {
   unity command --result-only console clear >/dev/null 2>&1
   unity command --result-only --timeout 540 test run --mode EditMode --filter "$1" --filter_type assembly "${@:2}" | python3 -c '
 import json,sys
-d=json.load(sys.stdin)
+t=sys.stdin.read(); d=json.JSONDecoder().raw_decode(t[t.index("{"):])[0]
 print(d["Summary"])
 failed=[r for r in d["Results"] if r["Status"]!="Passed"]
 for r in failed: print("FAIL", r["FullName"], "::", (r["Message"] or "")[:2500].replace("\n"," "))

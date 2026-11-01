@@ -21,7 +21,7 @@
 ## Setting up a character in Unity
 
 1. Select the model and run **Tools > SA > Set Up Character**. It finds the bones, the Avatar and the clips, converts the skinned meshes and adds **Rig Authoring**.
-2. Add the motions it needs. Each one has its own component; dropping a clip into a slot is enough, because the clip joins the character's animations automatically.
+2. Add the motions it needs with the **Add Single / 1D / 2D / 8-way** buttons on Rig Authoring. Each one is its own component; dropping a clip into a slot is enough, because the clip joins the character's animations automatically.
 
 | Component | Plays | You write at runtime |
 |---|---|---|
@@ -31,7 +31,7 @@
 | Directional Motion Authoring | one of eight heading clips, or idle (8-way strafing) | `DirectionalMotion.Velocity` (local, x right, y forward) |
 
 3. Tick **Inertialize** on Rig Authoring so switches are smooth. Without it a switch falls back to a cross-fade of `Transition Seconds`.
-4. Add **Leg IK Authoring** for planted, rolling feet. Start from the Gentle preset. Open the Rig Authoring **Resolved animations** list and untick **Foot IK** on flips, jumps and other airborne clips. `docs/legs.md` explains every setting.
+4. Tick **Plant feet on ground** on Rig Authoring for planted, rolling feet (the Gentle preset). **Customize planting** adds Leg IK Authoring for the preset, the ground layers, and the heel and ball. The floor needs a collider inside a SubScene. In Play mode the Console says "feet are planted" and green crosses in the Scene view mark each planted foot (**Tools > SA > Show Leg IK Contacts**); if no foot has planted after 3 seconds the Console says why. Untick **Foot IK** per clip under **Resolved animations** for flips, jumps and other airborne clips. `docs/legs.md` explains every setting.
 
 ## Rules the runtime follows
 
@@ -48,6 +48,6 @@ Planned, not built yet. A tl animation track writes a `SingleMotion` (clip and t
 
 ## Verified
 
-- Portable: `SA.Motion.Tests` 274 and `SA.Animation.Tests` 126, each run against both the net10.0 and netstandard2.1 builds; `eng/verify.sh --no-unity` passes 12 of 12. `SA.Animation` now also holds the portable pose evaluator (A1) and playback commands (A2); Unity still runs its own copy until an adapter packet switches it over.
-- Unity: `SA.Tests` 53 (including `MotionTests`: one-clip cuts with inertialization, hysteresis, priority and disabling, exact timeline time, 8-way with idle and speed matching), `SA.Reactions.Tests` 22, `SA.Motion.Unity.Tests` 3, `SA.IK.Tests` 3.
+- Portable: `SA.Motion.Tests` 295 and `SA.Animation.Tests` 126, each run against both the net10.0 and netstandard2.1 builds; `eng/verify.sh --no-unity` passes 12 of 12. `SA.Animation` now also holds the portable pose evaluator (A1) and playback commands (A2); Unity still runs its own copy until an adapter packet switches it over.
+- Unity: `SA.Tests` 53 (including `MotionTests`: one-clip cuts with inertialization, hysteresis, priority and disabling, exact timeline time, 8-way with idle and speed matching), `SA.Reactions.Tests` 28, `SA.Motion.Unity.Tests` 3, `SA.IK.Tests` 3.
 - Not verified: Play mode on a real character with these components, the authoring components in a real prefab, and any tl integration.

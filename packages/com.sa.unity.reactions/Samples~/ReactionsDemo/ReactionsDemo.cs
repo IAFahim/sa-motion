@@ -25,6 +25,8 @@ public class ReactionsDemo : MonoBehaviour
     public string InPlaceMaskName = "InPlace";
     public string UpperBodyMaskName = "UpperBody";
     public bool UseMasks = true;
+    [Tooltip("Stop Play mode by itself after this many seconds of game time. 0 means never.")]
+    public float StopAfterSeconds;
 
     BlobAssetReference<Collider> ground;
     EntityManager manager;
@@ -40,7 +42,6 @@ public class ReactionsDemo : MonoBehaviour
 
     void Start()
     {
-        stopAfter = File.Exists(StopAfterFile) && float.TryParse(File.ReadAllText(StopAfterFile), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var seconds) ? seconds : 0f;
         Application.targetFrameRate = 60;
         QualitySettings.vSyncCount = 0;
         manager = World.DefaultGameObjectInjectionWorld.EntityManager;
@@ -92,13 +93,10 @@ public class ReactionsDemo : MonoBehaviour
         }
     }
 
-    const string StopAfterFile = "Temp/sa/demo_stop_after.txt";
-    float stopAfter;
-
     void Update()
     {
         clock += Time.deltaTime;
-        if (stopAfter > 0f && clock >= stopAfter)
+        if (StopAfterSeconds > 0f && clock >= StopAfterSeconds)
             StopPlaying();
         var cycle = clock % CycleSeconds;
         DriveInertial(cycle);
@@ -235,13 +233,23 @@ public class ReactionsDemo : MonoBehaviour
         }
     }
 
+    static void Label(Rect rect, string text, GUIStyle style)
+    {
+        var shadow = new GUIStyle(style);
+        shadow.normal.textColor = new Color(0f, 0f, 0f, 0.85f);
+        GUI.Label(new Rect(rect.x + 1.5f, rect.y + 1.5f, rect.width, rect.height), text, shadow);
+        GUI.Label(rect, text, style);
+    }
+
     void OnGUI()
     {
         var style = new GUIStyle(GUI.skin.label) { fontSize = 18, fontStyle = FontStyle.Bold };
-        GUI.Label(new Rect(20, 14, 900, 30), "SA: inertialized transitions (left)  |  automatic active ragdoll (right)", style);
+        Label(new Rect(20, 14, 900, 30), "SA: inertialized transitions (left)  |  automatic active ragdoll (right)", style);
         var small = new GUIStyle(GUI.skin.label) { fontSize = 14 };
-        GUI.Label(new Rect(20, 44, 900, 24), "keys 1 shove   2 front shove   3 head hit   4 knockdown", small);
+        Label(new Rect(20, 44, 900, 24), "keys 1 shove   2 front shove   3 head hit   4 knockdown", small);
+        if (StopAfterSeconds > 0f)
+            Label(new Rect(20, 100, 1100, 24), "Play mode will stop by itself at " + StopAfterSeconds.ToString("F0") + " s. Set Stop After Seconds on Reactions Demo to 0 to turn this off.", small);
         if (clock - lastHit < 2f)
-            GUI.Label(new Rect(20, 70, 900, 28), "hit: " + lastHitLabel, style);
+            Label(new Rect(20, 70, 900, 28), "hit: " + lastHitLabel, style);
     }
 }
