@@ -44,6 +44,8 @@ Heel and ball are measured at bake time from the ankle's height above the charac
 | `Strict` | Cascadeur-like contacts that never slide; they only let go on lift. |
 | `Contact` | Gentle, but a foot plants even while it is still sliding at touchdown and never lets go because the animation slid. For clips that skim the ground (a jog or sprint): more plants, no sinking, at the price of a larger gap to the animation and a bigger pop. |
 
+The default stays `Gentle` (decided 2026-11-02): it keeps the solved foot close to the animation (Kyle walk: mean gap 2.5 cm, largest one-frame pop 3.4 cm). `Contact` plants skimming clips far more (UAL jog 18 to 19 percent against 1 to 9, sprint 24 against 0 to 12, Kyle walk 70 to 72 against 48 to 55) but moves the foot further from the animation (4.4 cm, pop 6.2 cm), so it is a per-character choice on Leg IK Authoring, not the default. It was run in Play on Kyle and the UAL mannequin only.
+
 ## Settings
 
 Lengths and speeds are for a leg 0.85 m long (`LegParams.ReferenceLegLength`) and scale with the character. `LegParamsSpec` holds the range, unit, group and help text for each one; the Unity inspector draws its sliders from it.
