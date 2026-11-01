@@ -1096,6 +1096,47 @@ public class PlaybackTotalityTests
         Assert.True(PlaybackChecks.Same(before, track[0]));
     }
 
+    static PlaybackTrack Scenario(float seconds, float weight, float speed, float dt)
+    {
+        var track = new PlaybackTrack(8);
+        var clips = new[] { First, Second };
+        var weights = new[] { weight, 0.5f };
+        var options = Plain.WithSpeed(speed);
+        track.Play(First, options);
+        track.Step(0.1f);
+        track.CrossFade(Second, seconds, options);
+        track.Step(dt);
+        track.Blend(clips, weights, seconds, options.WithLayer(1));
+        track.Step(dt);
+        track.Stop(1, seconds);
+        track.Step(dt);
+        track.TransitionPlay(3u, Third, seconds, options.WithLayer(2));
+        track.TransitionBlend(4u, clips, weights, seconds, options.WithLayer(3));
+        track.Step(dt);
+        return track;
+    }
+
+    static void SameScenario(PlaybackTrack expected, PlaybackTrack actual, string context)
+    {
+        PlaybackChecks.SameStates(expected, actual, context);
+        Assert.True(PlaybackChecks.SameIntent(expected.Intent, actual.Intent), $"{context}: intent");
+    }
+
+    [Fact]
+    public void NonFiniteAndNegativeInputsActLikeZero()
+    {
+        foreach (var bad in new[] { float.NaN, float.PositiveInfinity, float.NegativeInfinity })
+        {
+            SameScenario(Scenario(0f, 0.5f, 1f, 0.05f), Scenario(bad, 0.5f, 1f, 0.05f), $"seconds {bad}");
+            SameScenario(Scenario(0.3f, 0f, 1f, 0.05f), Scenario(0.3f, bad, 1f, 0.05f), $"weight {bad}");
+            SameScenario(Scenario(0.3f, 0.5f, 0f, 0.05f), Scenario(0.3f, 0.5f, bad, 0.05f), $"speed {bad}");
+            SameScenario(Scenario(0.3f, 0.5f, 1f, 0f), Scenario(0.3f, 0.5f, 1f, bad), $"step {bad}");
+        }
+        SameScenario(Scenario(0f, 0.5f, 1f, 0.05f), Scenario(-2f, 0.5f, 1f, 0.05f), "negative seconds");
+        SameScenario(Scenario(0.3f, 0f, 1f, 0.05f), Scenario(0.3f, -2f, 1f, 0.05f), "negative weight");
+        Assert.NotEqual(Scenario(0.3f, 0.5f, 1f, 0.05f).Count, Scenario(0f, 0.5f, 1f, 0.05f).Count);
+    }
+
     [Fact]
     public void NoCommandOrStepAllocates()
     {
@@ -1310,35 +1351,46 @@ public class PlaybackParityTests
     static readonly float[] Speeds = { 1f, 1f, 0f, -1f, 0.5f, 2f, 1.7f };
     static readonly float[] Seconds = { 0f, 0f, 0.05f, 0.3f, 1f, 0.7f };
     static readonly float[] Steps = { 0f, 0.016f, 0.016f, 0.05f, 0.2f, 0.7f, -0.03f };
+    static readonly float[] NonFiniteSpeeds = { 1f, 0f, -1f, float.NaN, float.PositiveInfinity, float.NegativeInfinity };
+    static readonly float[] NonFiniteSeconds = { 0f, 0.3f, float.NaN, float.PositiveInfinity, float.NegativeInfinity, -1f };
+    static readonly float[] NonFiniteWeights = { 0.5f, 1f, 0f, float.NaN, float.PositiveInfinity, float.NegativeInfinity, -0.5f };
+    static readonly float[] NonFiniteSteps = { 0.016f, 0.1f, 0f, float.NaN, float.PositiveInfinity, float.NegativeInfinity };
 
     static ClipIndex RandomClip(Random random) => new ClipIndex((ushort)random.Next(3));
 
-    static PlayOptions RandomOptions(Random random) => new PlayOptions(
+    static float Pick(Random random, float[] values) => values[random.Next(values.Length)];
+
+    static PlayOptions RandomOptions(Random random, bool nonFinite) => new PlayOptions(
         (byte)random.Next(3),
         random.Next(4) == 0 ? ClipMode.Additive : ClipMode.Override,
         new MaskIndex((ushort)random.Next(2)),
         (Wrap)random.Next(3),
-        Speeds[random.Next(Speeds.Length)],
+        Pick(random, nonFinite ? NonFiniteSpeeds : Speeds),
         random.Next(4) == 0);
 
-    static float RandomSeconds(Random random) => random.Next(5) == 0 ? (float)(random.NextDouble() * 0.6) : Seconds[random.Next(Seconds.Length)];
+    static float RandomSeconds(Random random, bool nonFinite)
+    {
+        if (nonFinite)
+            return Pick(random, NonFiniteSeconds);
+        return random.Next(5) == 0 ? (float)(random.NextDouble() * 0.6) : Pick(random, Seconds);
+    }
 
-    static (ClipIndex[] Clips, float[] Weights) RandomRecipe(Random random)
+    static (ClipIndex[] Clips, float[] Weights) RandomRecipe(Random random, bool nonFinite)
     {
         var clips = new ClipIndex[random.Next(5)];
         for (var i = 0; i < clips.Length; i++)
             clips[i] = random.Next(8) == 0 ? ClipIndex.None : RandomClip(random);
         var weights = new float[Math.Max(0, clips.Length + random.Next(-1, 2))];
         for (var i = 0; i < weights.Length; i++)
-            weights[i] = random.Next(6) == 0 ? 0f : (float)random.NextDouble();
+            weights[i] = nonFinite ? Pick(random, NonFiniteWeights) : random.Next(6) == 0 ? 0f : (float)random.NextDouble();
         return (clips, weights);
     }
 
-    static Func<IPlaybackSurface, int> RandomCommand(Random random)
+    static Func<IPlaybackSurface, int> RandomCommand(Random random, bool nonFinite)
     {
-        var options = RandomOptions(random);
+        var options = RandomOptions(random, nonFinite);
         var clip = RandomClip(random);
-        var seconds = RandomSeconds(random);
+        var seconds = RandomSeconds(random, nonFinite);
         var key = (uint)random.Next(1, 4);
         switch (random.Next(11))
         {
@@ -1349,21 +1401,21 @@ public class PlaybackParityTests
                 return s => { s.CrossFade(clip, seconds, options); return -1; };
             case 3:
             case 4:
-                var recipe = RandomRecipe(random);
+                var recipe = RandomRecipe(random, nonFinite);
                 return s => { s.Blend(recipe.Clips, recipe.Weights, seconds, options); return -1; };
             case 5:
                 var layer = (byte)random.Next(3);
                 return s => { s.Stop(layer, seconds); return -1; };
             case 6:
             case 7:
-                var dt = Steps[random.Next(Steps.Length)];
+                var dt = Pick(random, nonFinite ? NonFiniteSteps : Steps);
                 return s => { s.Step(dt); return -1; };
             case 8:
                 return s => (int)s.TransitionPlay(key, clip, seconds, options);
             case 9:
                 return s => (int)s.TransitionPlaySynced(key, clip, seconds, options);
             default:
-                var blend = RandomRecipe(random);
+                var blend = RandomRecipe(random, nonFinite);
                 return s => (int)s.TransitionBlend(key, blend.Clips, blend.Weights, seconds, options);
         }
     }
@@ -1396,25 +1448,38 @@ public class PlaybackParityTests
     [InlineData(6)]
     [InlineData(7)]
     [InlineData(8)]
-    public void RandomCommandsMatchALineForLineTranscriptionOfTheUnityBuffer(int seed)
+    public void RandomCommandsMatchALineForLineTranscriptionOfTheUnityBuffer(int seed) => Replay(seed, false);
+
+    [Theory]
+    [InlineData(11)]
+    [InlineData(12)]
+    [InlineData(13)]
+    [InlineData(14)]
+    public void NonFiniteSecondsWeightsSpeedsAndStepsMatchTheUnityTranscriptionToo(int seed) => Replay(seed, true);
+
+    static void Replay(int seed, bool nonFinite)
     {
         var random = new Random(seed);
         var reference = new PlaybackReference(PlaybackTrack.ClipDurations);
         var track = new PlaybackTrack(Roomy);
+        var decisions = new int[3];
         var largest = 0;
         for (var step = 0; step < 3000; step++)
         {
-            var command = RandomCommand(random);
+            var command = RandomCommand(random, nonFinite);
             var context = $"seed {seed} step {step}";
             var expectedResult = command(reference);
             Assert.True(reference.Count <= track.Slots.Length, $"{context}: the reference outgrew the test capacity");
             var actualResult = command(track);
             Assert.Equal(expectedResult, actualResult);
+            if (expectedResult >= 0)
+                decisions[expectedResult]++;
             PlaybackChecks.SameStates(reference, track, context);
             Assert.True(PlaybackChecks.SameIntent(reference.Intent, track.Intent), $"{context}: intent");
             MatchQueries(reference, track, context);
             largest = Math.Max(largest, reference.Count);
         }
-        Assert.True(largest >= 4);
+        Assert.True(largest >= 4, $"seed {seed}: the largest buffer was {largest}");
+        Assert.True(decisions[0] > 0 && decisions[1] > 0 && decisions[2] > 0, $"seed {seed}: start {decisions[0]} keep {decisions[1]} misuse {decisions[2]}");
     }
 }
