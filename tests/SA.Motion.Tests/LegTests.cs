@@ -404,6 +404,28 @@ public class LegTests
     }
 
     [Fact]
+    public void EverySettingFallsBackOnItsOwnAndPreparingEqualsSanitizingThenScaling()
+    {
+        var standard = LegParams.Standard;
+        for (var i = 0; i < LegParamsSpec.Count; i++)
+            Assert.Equal(standard, LegParamsSpec.Sanitize(LegParamsSpec.With(standard, (LegParam)i, float.NaN)));
+        var random = new Random(3);
+        foreach (var preset in Enum.GetValues<LegPreset>())
+            for (var trial = 0; trial < 50; trial++)
+            {
+                var p = LegParams.Preset(preset);
+                for (var i = 0; i < LegParamsSpec.Count; i++)
+                {
+                    var bounds = LegParamsSpec.Bounds((LegParam)i);
+                    if (random.Next(3) == 0)
+                        p = LegParamsSpec.With(p, (LegParam)i, bounds.Minimum - 1f + (float)random.NextDouble() * (bounds.Maximum - bounds.Minimum + 2f));
+                }
+                var factor = 0.5f + (float)random.NextDouble() * 2f;
+                Assert.Equal(LegParamsSpec.Scaled(LegParamsSpec.Sanitize(p), factor), LegParamsSpec.Prepared(p, factor));
+            }
+    }
+
+    [Fact]
     public void ParameterSchemaDescribesEveryFieldAndRoundTrips()
     {
         var fields = typeof(LegParams).GetFields().Where(f => !f.IsStatic).ToArray();

@@ -1,0 +1,7 @@
+<Project>
+  <ItemGroup Condition="'$(SaLibraryFramework)' != ''">
+    <ProjectReference Update="@(ProjectReference)">
+      <SetTargetFramework Condition="$([System.String]::Copy('%(Identity)').Replace('\','/').Contains('/src/'))">TargetFramework=$(SaLibraryFramework)</SetTargetFramework>
+    </ProjectReference>
+  </ItemGroup>
+</Project>

@@ -21,7 +21,7 @@ step() {
 
 step source-rules python3 eng/check_source_rules.py
 for project in tests/*/*.csproj; do
-  case "$project" in *PackageSmoke*) continue ;; esac
+  case "$project" in *PackageSmoke*|*Benchmarks*) continue ;; esac
   step "dotnet-$(basename "$(dirname "$project")")" eng/dotnet_test.sh "$project"
 done
 

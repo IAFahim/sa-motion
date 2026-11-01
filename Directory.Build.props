@@ -7,9 +7,4 @@
   <PropertyGroup Condition="'$(SaLibraryFramework)' == 'netstandard2.1'">
     <DefineConstants>$(DefineConstants);SA_LIBRARY_NETSTANDARD</DefineConstants>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(SaLibraryFramework)' != ''">
-    <ProjectReference>
-      <SetTargetFramework>TargetFramework=$(SaLibraryFramework)</SetTargetFramework>
-    </ProjectReference>
-  </ItemDefinitionGroup>
 </Project>
