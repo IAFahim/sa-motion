@@ -610,6 +610,20 @@ public class PlaybackTests
     }
 
     [Fact]
+    public void FindTreatsASteadyStateAsPlayingNotAsFading()
+    {
+        var track = new PlaybackTrack(4);
+        track.Put(0, new ClipState { Clip = First, Layer = 0, Weight = 1f, Fade = 0.5f, FadeRate = -1f });
+        track.Put(1, new ClipState { Clip = First, Layer = 0, Weight = 1f, Fade = 1f, FadeRate = 0f });
+        track.SetCount(2);
+        Assert.Equal(1, track.Find(0, First));
+        Assert.True(track.IsPlaying(0, First));
+        track.Put(1, new ClipState { Clip = First, Layer = 0, Weight = 1f, Fade = 1f, FadeRate = -0.5f });
+        Assert.Equal(0, track.Find(0, First));
+        Assert.False(track.IsPlaying(0, First));
+    }
+
+    [Fact]
     public void LayersAreIndependent()
     {
         var track = new PlaybackTrack(8);
@@ -1317,6 +1331,19 @@ public class TransitionPlaybackTests
         track.Step(0.5f);
         track.TransitionPlaySynced(3u, Third, 0f, Plain.WithWrap(Wrap.Clamp));
         Assert.Equal(0f, track[track.Find(0, Third)].Phase);
+    }
+
+    [Fact]
+    public void PlaySyncedNeverCopiesANonFinitePhase()
+    {
+        var track = new PlaybackTrack(4);
+        track.Put(0, new ClipState { Clip = First, Layer = 0, Wrap = Wrap.Loop, Phase = float.NaN, Weight = 1f, Fade = 1f });
+        track.SetCount(1);
+        Assert.Equal(RequestDecision.Start, track.TransitionPlaySynced(1u, Second, 0f, Plain));
+        var index = track.Find(0, Second);
+        Assert.True(index >= 0);
+        Assert.Equal(0f, track[index].Phase);
+        PlaybackChecks.FiniteAndBounded(track);
     }
 
     [Fact]
