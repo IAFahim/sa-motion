@@ -101,12 +101,12 @@ namespace SA.Motion.Legs
             var side = Sideways(limb, preferred, axis, stretch);
             var along = (upper * upper + span * span - lower * lower) / (2f * span);
             var squaredHeight = upper * upper - along * along;
-            var folded = squaredHeight > 0f;
-            var height = folded ? MathF.Sqrt(squaredHeight) : 0f;
+            var kneeBent = squaredHeight > 0f;
+            var height = kneeBent ? MathF.Sqrt(squaredHeight) : 0f;
             var middle = axis * along + side * height;
             var end = axis * span;
-            var upperTurn = Turn(limb.Upper / limb.UpperLength, middle, folded ? upper : Scalar.Abs(along));
-            var lowerTurn = Turn(Quaternion.Rotate(upperTurn, limb.Lower) / limb.LowerLength, end - middle, folded ? lower : Scalar.Abs(span - along));
+            var upperTurn = Turn(limb.Upper / limb.UpperLength, middle, kneeBent ? upper : Scalar.Abs(along));
+            var lowerTurn = Turn(Quaternion.Rotate(upperTurn, limb.Lower) / limb.LowerLength, end - middle, kneeBent ? lower : Scalar.Abs(span - along));
             return new LegReach(true, limb.Hip + middle, limb.Hip + end, upperTurn, LegMath.Unit(Quaternion.Multiply(lowerTurn, upperTurn)), stretch);
         }
 
