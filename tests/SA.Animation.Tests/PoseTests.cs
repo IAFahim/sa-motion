@@ -376,6 +376,21 @@ public class PoseMathTests
     }
 
     [Fact]
+    public void ANonFiniteFactorOrWeightActsAsZero()
+    {
+        var random = new Random(53);
+        var a = PoseFixtures.RandomPose(random);
+        var b = PoseFixtures.RandomPose(random);
+        foreach (var factor in new[] { float.NaN, float.PositiveInfinity, float.NegativeInfinity })
+        {
+            Assert.Equal(0f, PoseFixtures.ComponentGap(PoseMath.Lerp(a, b, factor), PoseMath.Lerp(a, b, 0f)));
+            Assert.Equal(0f, PoseFixtures.ComponentGap(PoseMath.Accumulate(a, b, factor), PoseMath.Accumulate(a, b, 0f)));
+            Assert.Equal(0f, PoseFixtures.RotationGap(PoseMath.Nlerp(a.Rotation, b.Rotation, factor), PoseMath.Nlerp(a.Rotation, b.Rotation, 0f)));
+        }
+        Assert.InRange(PoseFixtures.Gap(PoseMath.Lerp(a, b, float.NaN), a), 0f, 1e-6f);
+    }
+
+    [Fact]
     public void AlignFlipsOnlyAcrossHemispheres()
     {
         var q = PoseFixtures.RestTilt;
