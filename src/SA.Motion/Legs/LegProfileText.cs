@@ -7,6 +7,8 @@ namespace SA.Motion.Legs
 {
     public static class LegProfileText
     {
+        const char ByteOrderMark = (char)0xFEFF;
+
         public static string Write(in LegParams p)
         {
             var text = new StringBuilder();
@@ -31,7 +33,7 @@ namespace SA.Motion.Legs
             var result = fallback;
             var applied = new bool[LegParamsSpec.Count];
             var lineNumber = 0;
-            var start = 0;
+            var start = text.Length > 0 && text[0] == ByteOrderMark ? 1 : 0;
             while (start < text.Length)
             {
                 var end = start;

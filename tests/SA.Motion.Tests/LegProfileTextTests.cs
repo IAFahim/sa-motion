@@ -739,4 +739,13 @@ public class LegProfileTextTests
             SameBits(result, LegProfileText.Read(text, fallback, new List<string>()));
         }
     }
+
+    [Fact]
+    public void ALeadingByteOrderMarkIsSkipped()
+    {
+        var problems = new List<string>();
+        var read = LegProfileText.Read(((char)0xFEFF).ToString() + "Weight = 0.5\n", LegParams.Standard, problems);
+        Assert.Empty(problems);
+        Assert.Equal(0.5f, read.Weight);
+    }
 }
