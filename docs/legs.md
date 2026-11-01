@@ -42,6 +42,7 @@ Heel and ball are measured at bake time from the ankle's height above the charac
 | `Grounded` | Heavy characters: sticky plants, slower release, slower pelvis. |
 | `Agile` | Fast characters: quick release, crisp plants. |
 | `Strict` | Cascadeur-like contacts that never slide; they only let go on lift. |
+| `Contact` | Gentle, but a foot plants even while it is still sliding at touchdown and never lets go because the animation slid. For clips that skim the ground (a jog or sprint): more plants, no sinking, at the price of a larger gap to the animation and a bigger pop. |
 
 ## Settings
 

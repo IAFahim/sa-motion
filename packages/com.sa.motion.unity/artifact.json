@@ -1,11 +1,11 @@
 {
   "package": "SA.Motion.0.1.0.nupkg",
   "framework": "netstandard2.1",
-  "sha256": "fda4ce0babca3ff2f9aa0a3f487b7d32aeaf308a6b36b61ba09f8f2742598b74",
+  "sha256": "3374f60b10232921ce2a5e1f200c1f3614d7f037b3f0c624f7269ca45275b07b",
   "version": "0.1.0.0",
   "assemblyReferences": [
     "System.Runtime",
     "System.Collections"
   ],
-  "animationSha256": "c63ad5c152aa9fc787010a81542a105170458770cc9d09bbd4b7f5a36c86e64b"
+  "animationSha256": "a9ab039a7b754b3b4ddc9c6a06bea6c154450dbf5b930ec2f67baf01181d19dc"
 }

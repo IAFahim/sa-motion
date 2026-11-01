@@ -178,6 +178,18 @@ public class PlantSpeedTests
     }
 
     [Fact]
+    public void TheContactPresetPlantsAFootStillSlidingAtTouchdownThatGentleWaitsFor()
+    {
+        var gentle = new Walker { Params = LegParams.Gentle };
+        var contact = new Walker { Params = LegParams.Contact };
+        Assert.Equal(-1, FirstPlant(gentle, 5f, 30));
+        Assert.Equal(0, FirstPlant(contact, 5f, 30));
+        Assert.Equal(0f, LegParams.Contact.PlantSpeed);
+        Assert.Equal(0.5f, LegParams.Contact.ReleaseDistance);
+        Assert.Equal(LegParams.Gentle.PinRadius, LegParams.Contact.PinRadius);
+    }
+
+    [Fact]
     public void DecideRefusesACorruptSpeed()
     {
         var p = LegParams.Standard;

@@ -9,7 +9,8 @@ namespace SA.Motion.Legs
         Grounded,
         Agile,
         Strict,
-        Gentle
+        Gentle,
+        Contact
     }
 
     [Serializable]
@@ -153,8 +154,20 @@ namespace SA.Motion.Legs
             }
         }
 
+        public static LegParams Contact
+        {
+            get
+            {
+                var p = Gentle;
+                p.PlantSpeed = 0f;
+                p.ReleaseDistance = 0.5f;
+                return p;
+            }
+        }
+
         public static LegParams Preset(LegPreset preset) => preset switch
         {
+            LegPreset.Contact => Contact,
             LegPreset.Gentle => Gentle,
             LegPreset.Grounded => Grounded,
             LegPreset.Agile => Agile,
