@@ -48,6 +48,6 @@ Planned, not built yet. A tl animation track writes a `SingleMotion` (clip and t
 
 ## Verified
 
-- Portable: `SA.Motion.Tests` 186 and `SA.Animation.Tests` 11, each run against both the net10.0 and netstandard2.1 builds.
+- Portable: `SA.Motion.Tests` 274 and `SA.Animation.Tests` 126, each run against both the net10.0 and netstandard2.1 builds; `eng/verify.sh --no-unity` passes 12 of 12. `SA.Animation` now also holds the portable pose evaluator (A1) and playback commands (A2); Unity still runs its own copy until an adapter packet switches it over.
 - Unity: `SA.Tests` 53 (including `MotionTests`: one-clip cuts with inertialization, hysteresis, priority and disabling, exact timeline time, 8-way with idle and speed matching), `SA.Reactions.Tests` 22, `SA.Motion.Unity.Tests` 3, `SA.IK.Tests` 3.
 - Not verified: Play mode on a real character with these components, the authoring components in a real prefab, and any tl integration.
