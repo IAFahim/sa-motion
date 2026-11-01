@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>SA.Animation</PackageId>
+    <Version>0.1.0</Version>
+    <Description>Engine-independent clip playback, motion selection and pose evaluation.</Description>
+    <Authors>SA</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../SA.Motion/SA.Motion.csproj" />
+  </ItemGroup>
+</Project>
