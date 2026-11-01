@@ -133,13 +133,14 @@ namespace SA.Reactions
                     };
                     var footRotation = Rotation(ankle);
                     var contact = ankle.c3.xyz + math.rotate(footRotation, math.lerp(Conversions.ToUnity(shape.Heel), Conversions.ToUnity(shape.Ball), math.saturate(parameters.TurnPivot)));
-                    var ray = new RaycastInput
-                    {
-                        Start = contact + up * reach,
-                        End = contact - up * (reach + 0.2f * bodyScale),
-                        Filter = new CollisionFilter { BelongsTo = uint.MaxValue, CollidesWith = ik.GroundMask }
-                    };
-                    var hit = World.CastRay(ray, out var ground);
+                    var heelPoint = ankle.c3.xyz + math.rotate(footRotation, Conversions.ToUnity(shape.Heel));
+                    var ballPoint = ankle.c3.xyz + math.rotate(footRotation, Conversions.ToUnity(shape.Ball));
+                    var filter = new CollisionFilter { BelongsTo = uint.MaxValue, CollidesWith = ik.GroundMask };
+                    var drop = reach + 0.2f * bodyScale;
+                    var hitHeel = World.CastRay(new RaycastInput { Start = heelPoint + up * reach, End = heelPoint - up * drop, Filter = filter }, out var groundHeel);
+                    var hitBall = World.CastRay(new RaycastInput { Start = ballPoint + up * reach, End = ballPoint - up * drop, Filter = filter }, out var groundBall);
+                    var hit = hitHeel || hitBall;
+                    var ground = hitHeel && (!hitBall || math.dot(groundHeel.Position, up) >= math.dot(groundBall.Position, up)) ? groundHeel : groundBall;
                     supports[i] = hit ? World.Bodies[ground.RigidBodyIndex].Entity : Entity.Null;
                     if (foot.State.Planted != 0 && foot.Support != Entity.Null && (Transforms.HasComponent(foot.Support) || Fixed.HasComponent(foot.Support)))
                         foot.State.Anchor = Conversions.ToMotion(math.transform(Matrix(foot.Support), foot.SupportAnchor));

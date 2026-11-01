@@ -17,6 +17,8 @@ namespace SA.Reactions.Tests
         PhysicsWorld physics;
         BlobAssetReference<Unity.Physics.Collider> collider;
         Entity floor;
+        Entity step;
+        BlobAssetReference<Unity.Physics.Collider> stepCollider;
         Entity rig;
         Entity upper;
         Entity lower;
@@ -53,10 +55,13 @@ namespace SA.Reactions.Tests
             world = new World("SA.LegIK");
             manager = world.EntityManager;
             collider = BoxCollider.Create(new BoxGeometry { Center = new float3(0, -0.5f, 0), Size = new float3(10, 1, 10), Orientation = quaternion.identity, BevelRadius = 0 }, CollisionFilter.Default, Material.Default);
-            physics = new PhysicsWorld(1, 0, 0);
+            stepCollider = BoxCollider.Create(new BoxGeometry { Center = new float3(0, 0.05f, 0), Size = new float3(2, 0.1f, 10), Orientation = quaternion.identity, BevelRadius = 0 }, CollisionFilter.Default, Material.Default);
+            physics = new PhysicsWorld(2, 0, 0);
             floor = Node(Entity.Null, float3.zero);
+            step = Node(Entity.Null, new float3(4, 0, 5.08f));
             var bodies = physics.Bodies;
             bodies[0] = new RigidBody { Collider = collider, Entity = floor, WorldFromBody = RigidTransform.identity, Scale = 1f };
+            bodies[1] = new RigidBody { Collider = stepCollider, Entity = step, WorldFromBody = new RigidTransform(quaternion.identity, new float3(4, 0, 5.08f)), Scale = 1f };
             physics.CollisionWorld.BuildBroadphase(ref physics, 1f / 60f, new float3(0, -9.81f, 0));
             manager.CreateSingleton(new PhysicsWorldSingleton { PhysicsWorld = physics });
             rig = Node(Entity.Null, float3.zero);
@@ -86,6 +91,7 @@ namespace SA.Reactions.Tests
             world.Dispose();
             physics.Dispose();
             collider.Dispose();
+            stepCollider.Dispose();
         }
 
         void Animate(float3 rigPosition, float lift)
@@ -132,6 +138,15 @@ namespace SA.Reactions.Tests
                 Assert.AreEqual(1, Leg.State.Planted, "frame " + i);
             }
             Assert.That(0.4f - Matrix(foot).c3.x, Is.InRange(0f, LegParams.Gentle.PinRadius * 1.5f));
+        }
+
+        [Test]
+        public void ATiltedFootWithItsBallOverAStepRestsOnTheStepNotTheFloorUnderItsHeel()
+        {
+            for (var i = 0; i < 8; i++)
+                Animate(new float3(4, 0, 0), 0f);
+            Assert.AreEqual(1, Leg.State.Planted);
+            Assert.AreEqual(0.1f, Conversions.ToUnity(Leg.State.Anchor).y, 0.005f);
         }
 
         [Test]
