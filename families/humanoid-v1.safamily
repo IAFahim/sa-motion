@@ -2,7 +2,16 @@
   "schemaVersion": 1,
   "family": "Humanoid",
   "familyVersion": 1,
-  "status": "draft-awaiting-Unity-Avatar-conformance",
+  "status": "published",
+  "conformance": {
+    "gate": "C08-Unity-Avatar",
+    "date": "2026-11-03",
+    "avatars": [
+      { "name": "UAL1", "isHuman": true, "isValid": true, "mapped": 52 },
+      { "name": "UAL2", "isHuman": true, "isValid": true, "mapped": 52 },
+      { "name": "Kyle", "isHuman": true, "isValid": true, "mapped": 48 }
+    ]
+  },
   "units": "metres-radians-seconds",
   "quaternion": "xyzw-hamilton-active",
   "axes": {

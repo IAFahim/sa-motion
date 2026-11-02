@@ -80,3 +80,7 @@ Residency owns metadata transitions, not memory. Its slot table must be single-w
 The .NET tests cover algebra, f32 moving-target derivatives, random quaternion packing, file corruption/truncation, raw fallback, segment boundaries, matching vs exhaustive optima, two different target hierarchies, interruption/retry/seek, palette reconstruction, pin lifetimes and zero warm managed allocations. Both library target builds are exercised from the .NET 10 test host. These are not Unity/Burst/player measurements.
 
 Continue with C08's editor-only canonical Avatar and raw-baker conformance, followed by C11/C12 authoring and CPU ECS/timeline wiring. Reuse the fixtures and APIs above. C02's real inventory, automatic trusted calibration acquisition, batch publisher/catalog transport, native I/O jobs, detailed Inspector diagnostics, IK integration, GPU path and the real 50/500 corpus remain integration/content work. No completed Unity feature or rendered visual quality is claimed by CF1.
+
+## C09 mint note
+
+`families/humanoid-v1.safamily` is published as family v1. The C08 Unity Avatar gate (UAL1/UAL2/Kyle all `isHuman` and `isValid`, mapped 52/52/48, 2026-11-03) is recorded in its `conformance` field. `FamilyMintTests` checks the 56 expanded locals against `CanonicalHumanoid.WriteReference` and the stability of `ContentIdentity.Skeleton` across renames and version bumps. Family AssetId `90cb280f14f3f02fbfe0beaeda925711d6886c2aac8e814ac04516f4946cd099`.

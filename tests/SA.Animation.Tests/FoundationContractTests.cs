@@ -44,7 +44,7 @@ public class FoundationContractTests
     public void ExpandedDraftDescriptorMatchesTheCompiledReferenceExactly()
     {
         using var doc = JsonDocument.Parse(Fixture("humanoid-v1.safamily"));
-        Assert.Equal("draft-awaiting-Unity-Avatar-conformance", doc.RootElement.GetProperty("status").GetString());
+        Assert.Equal("published", doc.RootElement.GetProperty("status").GetString());
         var bones = doc.RootElement.GetProperty("bones");
         var parents = new int[56];
         var poses = new Pose[56];
