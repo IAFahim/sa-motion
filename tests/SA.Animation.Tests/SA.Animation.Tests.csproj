@@ -12,5 +12,10 @@
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5"><PrivateAssets>all</PrivateAssets></PackageReference>
     <ProjectReference Include="../../src/SA.Animation/SA.Animation.csproj" />
+    <ProjectReference Include="../../src/SA.Animation.Content/SA.Animation.Content.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Fixtures/*" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../families/humanoid-v1.safamily" Link="Fixtures/humanoid-v1.safamily" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

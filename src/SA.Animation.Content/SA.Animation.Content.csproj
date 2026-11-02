@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>SA.Animation.Content</PackageId>
+    <Version>0.1.0</Version>
+    <Description>Engine-independent shared animation asset validation and offline encoding.</Description>
+    <Authors>SA</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../SA.Animation/SA.Animation.csproj" />
+  </ItemGroup>
+</Project>

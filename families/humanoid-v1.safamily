@@ -1,0 +1,1342 @@
+{
+  "schemaVersion": 1,
+  "family": "Humanoid",
+  "familyVersion": 1,
+  "status": "draft-awaiting-Unity-Avatar-conformance",
+  "units": "metres-radians-seconds",
+  "quaternion": "xyzw-hamilton-active",
+  "axes": {
+    "up": "+Y",
+    "forward": "+Z",
+    "right": "+X"
+  },
+  "hipBone": 1,
+  "hipHeightMetres": 1,
+  "requiredBones": [
+    1,
+    2,
+    6,
+    11,
+    12,
+    13,
+    30,
+    31,
+    32,
+    48,
+    49,
+    50,
+    52,
+    53,
+    54
+  ],
+  "contacts": [
+    {
+      "name": "LeftFoot",
+      "bone": 50,
+      "localOffset": [
+        0,
+        -0.1,
+        0.08
+      ]
+    },
+    {
+      "name": "RightFoot",
+      "bone": 54,
+      "localOffset": [
+        0,
+        -0.1,
+        0.08
+      ]
+    }
+  ],
+  "bones": [
+    {
+      "index": 0,
+      "name": "Root",
+      "parent": -1,
+      "referenceLocal": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 1,
+      "name": "Hips",
+      "parent": 0,
+      "referenceLocal": {
+        "position": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 2,
+      "name": "Spine",
+      "parent": 1,
+      "referenceLocal": {
+        "position": [
+          0.0,
+          0.12000000476837158,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 3,
+      "name": "Chest",
+      "parent": 2,
+      "referenceLocal": {
+        "position": [
+          0.0,
+          0.20000004768371582,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 4,
+      "name": "UpperChest",
+      "parent": 3,
+      "referenceLocal": {
+        "position": [
+          0.0,
+          0.13999998569488525,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 5,
+      "name": "Neck",
+      "parent": 4,
+      "referenceLocal": {
+        "position": [
+          0.0,
+          0.09999990463256836,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 6,
+      "name": "Head",
+      "parent": 5,
+      "referenceLocal": {
+        "position": [
+          0.0,
+          0.12000000476837158,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 7,
+      "name": "Jaw",
+      "parent": 6,
+      "referenceLocal": {
+        "position": [
+          0.0,
+          -0.04999995231628418,
+          0.07500000298023224
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 8,
+      "name": "LeftEye",
+      "parent": 6,
+      "referenceLocal": {
+        "position": [
+          -0.03200000151991844,
+          0.040000081062316895,
+          0.07500000298023224
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 9,
+      "name": "RightEye",
+      "parent": 6,
+      "referenceLocal": {
+        "position": [
+          0.03200000151991844,
+          0.040000081062316895,
+          0.07500000298023224
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 10,
+      "name": "LeftShoulder",
+      "parent": 4,
+      "referenceLocal": {
+        "position": [
+          -0.10000000149011612,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 11,
+      "name": "LeftUpperArm",
+      "parent": 10,
+      "referenceLocal": {
+        "position": [
+          -0.10000000149011612,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 12,
+      "name": "LeftLowerArm",
+      "parent": 11,
+      "referenceLocal": {
+        "position": [
+          -0.30000001192092896,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 13,
+      "name": "LeftHand",
+      "parent": 12,
+      "referenceLocal": {
+        "position": [
+          -0.25,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 14,
+      "name": "LeftThumbProximal",
+      "parent": 13,
+      "referenceLocal": {
+        "position": [
+          -0.0350000262260437,
+          0.0,
+          0.054999999701976776
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 15,
+      "name": "LeftThumbIntermediate",
+      "parent": 14,
+      "referenceLocal": {
+        "position": [
+          -0.02499997615814209,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 16,
+      "name": "LeftThumbDistal",
+      "parent": 15,
+      "referenceLocal": {
+        "position": [
+          -0.019999980926513672,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 17,
+      "name": "LeftIndexProximal",
+      "parent": 13,
+      "referenceLocal": {
+        "position": [
+          -0.04500001668930054,
+          0.0,
+          0.02500000037252903
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 18,
+      "name": "LeftIndexIntermediate",
+      "parent": 17,
+      "referenceLocal": {
+        "position": [
+          -0.029999971389770508,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 19,
+      "name": "LeftIndexDistal",
+      "parent": 18,
+      "referenceLocal": {
+        "position": [
+          -0.020000040531158447,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 20,
+      "name": "LeftMiddleProximal",
+      "parent": 13,
+      "referenceLocal": {
+        "position": [
+          -0.04500001668930054,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 21,
+      "name": "LeftMiddleIntermediate",
+      "parent": 20,
+      "referenceLocal": {
+        "position": [
+          -0.029999971389770508,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 22,
+      "name": "LeftMiddleDistal",
+      "parent": 21,
+      "referenceLocal": {
+        "position": [
+          -0.020000040531158447,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 23,
+      "name": "LeftRingProximal",
+      "parent": 13,
+      "referenceLocal": {
+        "position": [
+          -0.04500001668930054,
+          0.0,
+          -0.02500000037252903
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 24,
+      "name": "LeftRingIntermediate",
+      "parent": 23,
+      "referenceLocal": {
+        "position": [
+          -0.029999971389770508,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 25,
+      "name": "LeftRingDistal",
+      "parent": 24,
+      "referenceLocal": {
+        "position": [
+          -0.020000040531158447,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 26,
+      "name": "LeftLittleProximal",
+      "parent": 13,
+      "referenceLocal": {
+        "position": [
+          -0.04500001668930054,
+          0.0,
+          -0.04500000178813934
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 27,
+      "name": "LeftLittleIntermediate",
+      "parent": 26,
+      "referenceLocal": {
+        "position": [
+          -0.029999971389770508,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 28,
+      "name": "LeftLittleDistal",
+      "parent": 27,
+      "referenceLocal": {
+        "position": [
+          -0.020000040531158447,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 29,
+      "name": "RightShoulder",
+      "parent": 4,
+      "referenceLocal": {
+        "position": [
+          0.10000000149011612,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 30,
+      "name": "RightUpperArm",
+      "parent": 29,
+      "referenceLocal": {
+        "position": [
+          0.10000000149011612,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 31,
+      "name": "RightLowerArm",
+      "parent": 30,
+      "referenceLocal": {
+        "position": [
+          0.30000001192092896,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 32,
+      "name": "RightHand",
+      "parent": 31,
+      "referenceLocal": {
+        "position": [
+          0.25,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 33,
+      "name": "RightThumbProximal",
+      "parent": 32,
+      "referenceLocal": {
+        "position": [
+          0.0350000262260437,
+          0.0,
+          0.054999999701976776
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 34,
+      "name": "RightThumbIntermediate",
+      "parent": 33,
+      "referenceLocal": {
+        "position": [
+          0.02499997615814209,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 35,
+      "name": "RightThumbDistal",
+      "parent": 34,
+      "referenceLocal": {
+        "position": [
+          0.019999980926513672,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 36,
+      "name": "RightIndexProximal",
+      "parent": 32,
+      "referenceLocal": {
+        "position": [
+          0.04500001668930054,
+          0.0,
+          0.02500000037252903
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 37,
+      "name": "RightIndexIntermediate",
+      "parent": 36,
+      "referenceLocal": {
+        "position": [
+          0.029999971389770508,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 38,
+      "name": "RightIndexDistal",
+      "parent": 37,
+      "referenceLocal": {
+        "position": [
+          0.020000040531158447,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 39,
+      "name": "RightMiddleProximal",
+      "parent": 32,
+      "referenceLocal": {
+        "position": [
+          0.04500001668930054,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 40,
+      "name": "RightMiddleIntermediate",
+      "parent": 39,
+      "referenceLocal": {
+        "position": [
+          0.029999971389770508,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 41,
+      "name": "RightMiddleDistal",
+      "parent": 40,
+      "referenceLocal": {
+        "position": [
+          0.020000040531158447,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 42,
+      "name": "RightRingProximal",
+      "parent": 32,
+      "referenceLocal": {
+        "position": [
+          0.04500001668930054,
+          0.0,
+          -0.02500000037252903
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 43,
+      "name": "RightRingIntermediate",
+      "parent": 42,
+      "referenceLocal": {
+        "position": [
+          0.029999971389770508,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 44,
+      "name": "RightRingDistal",
+      "parent": 43,
+      "referenceLocal": {
+        "position": [
+          0.020000040531158447,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 45,
+      "name": "RightLittleProximal",
+      "parent": 32,
+      "referenceLocal": {
+        "position": [
+          0.04500001668930054,
+          0.0,
+          -0.04500000178813934
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 46,
+      "name": "RightLittleIntermediate",
+      "parent": 45,
+      "referenceLocal": {
+        "position": [
+          0.029999971389770508,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 47,
+      "name": "RightLittleDistal",
+      "parent": 46,
+      "referenceLocal": {
+        "position": [
+          0.020000040531158447,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 48,
+      "name": "LeftUpperLeg",
+      "parent": 1,
+      "referenceLocal": {
+        "position": [
+          -0.0949999988079071,
+          -0.050000011920928955,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 49,
+      "name": "LeftLowerLeg",
+      "parent": 48,
+      "referenceLocal": {
+        "position": [
+          0.0,
+          -0.42000001668930054,
+          0.014999999664723873
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 50,
+      "name": "LeftFoot",
+      "parent": 49,
+      "referenceLocal": {
+        "position": [
+          0.0,
+          -0.429999977350235,
+          -0.014999999664723873
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 51,
+      "name": "LeftToes",
+      "parent": 50,
+      "referenceLocal": {
+        "position": [
+          0.0,
+          -0.06499999761581421,
+          0.1599999964237213
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 52,
+      "name": "RightUpperLeg",
+      "parent": 1,
+      "referenceLocal": {
+        "position": [
+          0.0949999988079071,
+          -0.050000011920928955,
+          0.0
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 53,
+      "name": "RightLowerLeg",
+      "parent": 52,
+      "referenceLocal": {
+        "position": [
+          0.0,
+          -0.42000001668930054,
+          0.014999999664723873
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 54,
+      "name": "RightFoot",
+      "parent": 53,
+      "referenceLocal": {
+        "position": [
+          0.0,
+          -0.429999977350235,
+          -0.014999999664723873
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "index": 55,
+      "name": "RightToes",
+      "parent": 54,
+      "referenceLocal": {
+        "position": [
+          0.0,
+          -0.06499999761581421,
+          0.1599999964237213
+        ],
+        "rotation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    }
+  ]
+}

@@ -1,5 +1,9 @@
 # Work packets
 
+## Shared animation foundation
+
+CF1 (`packet/CF1-shared-animation-foundation`) implements the portable shared-family kernels from `/home/i/ruk2/plan.md`. Its spec is `docs/packets/CF1.md`; the actual API/lifetime contract is `docs/shared-family-contract.md`; measured receipts and next integration work are in `docs/handoff/CF1.md`. Keep the existing Unity/legacy path intact and continue from this branch when adding the canonical baker and timeline adapter.
+
 Each packet is sized for one small agent. Read `AGENTS.md` first. A packet owns the paths listed and must not edit any other path. Shared files (`SA.Motion.sln`, `docs/verification.md`, `docs/provenance.md`, `plan.md` in `com.sa.unity`) belong to the integrator.
 
 Why this order: a .NET test run takes seconds and needs no Editor, so any number of agents can run it at once. A Unity compile took 5 minutes 7 seconds here and one Editor serves everyone. Wave 1 is therefore pure .NET. Wave 2 uses Unity and runs one packet at a time.

@@ -99,6 +99,12 @@
           "SA.Motion": "[0.1.0, )"
         }
       },
+      "sa.animation.content": {
+        "type": "Project",
+        "dependencies": {
+          "SA.Animation": "[0.1.0, )"
+        }
+      },
       "sa.motion": {
         "type": "Project"
       }
