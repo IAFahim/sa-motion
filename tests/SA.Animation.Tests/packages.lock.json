@@ -102,11 +102,18 @@
       "sa.animation.content": {
         "type": "Project",
         "dependencies": {
-          "SA.Animation": "[0.1.0, )"
+          "SA.Animation": "[0.1.1, )",
+          "SA.Shape": "[0.1.0, )"
         }
       },
       "sa.motion": {
         "type": "Project"
+      },
+      "sa.shape": {
+        "type": "Project",
+        "dependencies": {
+          "SA.Animation": "[0.1.1, )"
+        }
       }
     }
   }

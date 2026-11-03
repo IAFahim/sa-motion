@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "targetRigId": "0500000000000000060000000000000007000000000000000800000000000000",
+  "definitionId": "f215f7ec40534784735bfcce78d59eec317357c8f57610b2740aa54b1d8e70f7",
+  "units": "metres",
+  "up": "+Y",
+  "grounding": "KeepBase",
+  "supports": [
+    { "bone": "LeftFoot", "offset": [0, -0.1, 0.05] },
+    { "bone": "RightFoot", "offset": [0, -0.1, 0.05] }
+  ],
+  "lengthRange": [0.25, 4],
+  "skinScaleRange": [0.125, 8],
+  "channels": [
+    { "id": 1, "name": "legLength", "min": -1, "max": 1, "default": 0, "halfLifeSeconds": 0.1 },
+    { "id": 2, "name": "leftBulk", "min": -1, "max": 1, "default": 0, "halfLifeSeconds": 0.1 },
+    { "id": 3, "name": "rightBulk", "min": -1, "max": 1, "default": 0, "halfLifeSeconds": 0.2 }
+  ],
+  "offsetEffects": [
+    { "channel": 0, "bone": "LeftThigh", "delta": [0, 0, 0], "logLength": 0.22314355 },
+    { "channel": 0, "bone": "LeftShin", "delta": [0, 0.02, 0], "logLength": 0.22314355 },
+    { "channel": 0, "bone": "RightThigh", "delta": [0, 0, 0], "logLength": 0.22314355 },
+    { "channel": 0, "bone": "RightShin", "delta": [0, 0.02, 0], "logLength": 0.22314355 },
+    { "channel": 1, "bone": 2, "delta": [0.05, 0, 0], "logLength": 0 },
+    { "channel": 2, "bone": 5, "delta": [-0.05, 0, 0], "logLength": 0 }
+  ],
+  "skinEffects": [
+    { "channel": 0, "bone": "LeftThigh", "logScale": [0, 0.22314355, 0] },
+    { "channel": 0, "bone": "LeftShin", "logScale": [0, 0.22314355, 0] },
+    { "channel": 0, "bone": "RightThigh", "logScale": [0, 0.22314355, 0] },
+    { "channel": 0, "bone": "RightShin", "logScale": [0, 0.22314355, 0] },
+    { "channel": 1, "bone": "LeftThigh", "logScale": [0.18232156, 0, 0] },
+    { "channel": 2, "bone": "RightThigh", "logScale": [0.18232156, 0, 0] }
+  ],
+  "skinFrames": [
+    { "basis": [0, 0, 0, 1], "pivot": [0, 0, 0] },
+    { "basis": [0, 0, 0, 1], "pivot": [0, 0, 0] },
+    { "basis": [0, 0, 0, -1], "pivot": [0, 0, 0] },
+    { "basis": [0, 0, 0, 1], "pivot": [0, 0, 0] },
+    { "basis": [0, 0, 0, 1], "pivot": [0, 0, 0] },
+    { "basis": [0, 0, 0, 1], "pivot": [0, 0, 0] },
+    { "basis": [0, 0, 0, 1], "pivot": [0, 0, 0] },
+    { "basis": [0, 0, 0, 1], "pivot": [0, 0, 0] }
+  ],
+  "morphs": [
+    { "name": "leftCalf", "min": 0, "max": 1, "base": 0 },
+    { "name": "rightCalf", "min": 0, "max": 1, "base": 0 }
+  ],
+  "morphEffects": [
+    { "channel": 1, "morph": "leftCalf", "delta": 0.5 },
+    { "channel": 2, "morph": 1, "delta": 0.5 }
+  ]
+}

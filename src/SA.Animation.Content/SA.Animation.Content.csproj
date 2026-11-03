@@ -8,5 +8,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../SA.Animation/SA.Animation.csproj" />
+    <ProjectReference Include="../SA.Shape/SA.Shape.csproj" />
   </ItemGroup>
 </Project>

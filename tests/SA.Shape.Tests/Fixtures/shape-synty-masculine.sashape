@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "targetRigId": "3c37466dee941d1626c4b3d7c89e065061f38e3019bf389e5d5e2ac2eb345cb2",
+  "definitionId": "4846c2549aa21add1a51a715e3248c8b20be377f6c543745f8533e82a098712e",
+  "units": "metres",
+  "up": "+Y",
+  "grounding": "KeepBase",
+  "supports": [
+    { "bone": "Toes_L", "offset": [0, -0.08, 0.12] },
+    { "bone": "Toes_R", "offset": [0, -0.08, 0.12] }
+  ],
+  "lengthRange": [0.25, 4],
+  "skinScaleRange": [0.125, 8],
+  "channels": [
+    { "id": 11, "name": "legLength", "min": -1, "max": 1, "default": 0, "halfLifeSeconds": 0.1 },
+    { "id": 12, "name": "armLength", "min": -1, "max": 1, "default": 0, "halfLifeSeconds": 0.1 },
+    { "id": 13, "name": "spineLength", "min": -1, "max": 1, "default": 0, "halfLifeSeconds": 0.15 }
+  ],
+  "offsetEffects": [
+    { "channel": 0, "bone": "LowerLeg_L", "delta": [0, 0, 0], "logLength": 0.22314355 },
+    { "channel": 0, "bone": "LowerLeg_R", "delta": [0, 0, 0], "logLength": 0.22314355 },
+    { "channel": 0, "bone": "Ankle_L", "delta": [0, 0, 0], "logLength": 0.22314355 },
+    { "channel": 0, "bone": "Ankle_R", "delta": [0, 0, 0], "logLength": 0.22314355 },
+    { "channel": 1, "bone": "Elbow_L", "delta": [0, 0, 0], "logLength": 0.18232156 },
+    { "channel": 1, "bone": "Elbow_R", "delta": [0, 0, 0], "logLength": 0.18232156 },
+    { "channel": 1, "bone": "Hand_L", "delta": [0, 0, 0], "logLength": 0.18232156 },
+    { "channel": 1, "bone": "Hand_R", "delta": [0, 0, 0], "logLength": 0.18232156 },
+    { "channel": 2, "bone": "Spine_02", "delta": [0, 0, 0], "logLength": 0.13976194 },
+    { "channel": 2, "bone": "Spine_03", "delta": [0, 0, 0], "logLength": 0.13976194 },
+    { "channel": 2, "bone": "Neck", "delta": [0, 0, 0], "logLength": 0.13976194 }
+  ],
+  "skinEffects": [
+    { "channel": 0, "bone": "UpperLeg_L", "logScale": [0, 0.22314355, 0] },
+    { "channel": 0, "bone": "UpperLeg_R", "logScale": [0, 0.22314355, 0] },
+    { "channel": 0, "bone": "LowerLeg_L", "logScale": [0, 0.22314355, 0] },
+    { "channel": 0, "bone": "LowerLeg_R", "logScale": [0, 0.22314355, 0] },
+    { "channel": 1, "bone": "Shoulder_L", "logScale": [0, 0.18232156, 0] },
+    { "channel": 1, "bone": "Shoulder_R", "logScale": [0, 0.18232156, 0] },
+    { "channel": 1, "bone": "Elbow_L", "logScale": [0, 0.18232156, 0] },
+    { "channel": 1, "bone": "Elbow_R", "logScale": [0, 0.18232156, 0] },
+    { "channel": 2, "bone": "Spine_01", "logScale": [0, 0.13976194, 0] },
+    { "channel": 2, "bone": "Spine_02", "logScale": [0, 0.13976194, 0] },
+    { "channel": 2, "bone": "Spine_03", "logScale": [0, 0.13976194, 0] }
+  ]
+}

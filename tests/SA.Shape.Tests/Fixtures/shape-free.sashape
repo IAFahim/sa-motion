@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "targetRigId": "0500000000000000060000000000000007000000000000000800000000000000",
+  "definitionId": "e92fdb243bb7197e8d648c78e5f53950df2f19ac9b74189da7719de0ae5d4041",
+  "units": "metres",
+  "up": "+Y",
+  "grounding": "Free",
+  "supports": [
+    { "bone": 4, "offset": [0, -0.1, 0.05] },
+    { "bone": 7, "offset": [0, -0.1, 0.05] }
+  ],
+  "lengthRange": [0.5, 2],
+  "skinScaleRange": [0.5, 2],
+  "channels": [
+    { "id": 7, "name": "bulk", "min": 0, "max": 1, "default": 0, "halfLifeSeconds": 0 }
+  ],
+  "offsetEffects": [
+    { "channel": 0, "bone": 2, "logLength": 0.40546511 }
+  ],
+  "skinEffects": [
+    { "channel": 0, "bone": 2, "logScale": [0.40546511, 0, 0] }
+  ]
+}
