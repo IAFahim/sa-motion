@@ -2,10 +2,11 @@ from pathlib import Path
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
+import uuid
 import zipfile
-
 root = Path(__file__).resolve().parents[1]
 artifacts = root / 'artifacts'
 artifacts.mkdir(exist_ok=True)
@@ -41,10 +42,20 @@ with zipfile.ZipFile(artifacts / 'packages' / 'SA.Animation.0.1.0.nupkg') as arc
     animation = archive.read('lib/netstandard2.1/SA.Animation.dll')
 (plugin / 'SA.Animation.dll').write_bytes(animation)
 animation_sha = hashlib.sha256(animation).hexdigest()
+run(['dotnet', 'restore', 'src/SA.Animation.Content/SA.Animation.Content.csproj'])
+run(['dotnet', 'pack', 'src/SA.Animation.Content/SA.Animation.Content.csproj', '--configuration', 'Release', '--no-restore', '--disable-build-servers', '-m:1', '-p:UseSharedCompilation=false', '--output', str(artifacts / 'packages')])
+with zipfile.ZipFile(artifacts / 'packages' / 'SA.Animation.Content.0.1.0.nupkg') as archive:
+    content = archive.read('lib/netstandard2.1/SA.Animation.Content.dll')
+(plugin / 'SA.Animation.Content.dll').write_bytes(content)
+content_sha = hashlib.sha256(content).hexdigest()
+content_meta = plugin / 'SA.Animation.Content.dll.meta'
+if not content_meta.exists():
+    meta = (plugin / 'SA.Animation.dll.meta').read_text()
+    content_meta.write_text(re.sub(r'^guid: [0-9a-f]+', 'guid: ' + uuid.uuid4().hex, meta, flags=re.M))
 shutil.copyfile(root / 'LICENSE', plugin / 'SA.Motion.LICENSE.txt')
 fixtures = bridge / 'Tests' / 'Resources' / 'SA.Motion'
 fixtures.mkdir(parents=True, exist_ok=True)
 (fixtures / 'PackageSmoke.json').write_text(json.dumps(report, indent=2) + '\n')
 (artifacts / 'package-smoke.json').write_text(json.dumps(report, indent=2) + '\n')
-(bridge / 'artifact.json').write_text(json.dumps({'package': package.name, 'framework': 'netstandard2.1', 'sha256': sha, 'version': report['Version'], 'assemblyReferences': report['References'], 'animationSha256': animation_sha}, indent=2) + '\n')
+(bridge / 'artifact.json').write_text(json.dumps({'package': package.name, 'framework': 'netstandard2.1', 'sha256': sha, 'version': report['Version'], 'assemblyReferences': report['References'], 'animationSha256': animation_sha, 'contentSha256': content_sha}, indent=2) + '\n')
 print(json.dumps({'sha256': sha, 'nugetConsumer': 'passed', 'plugin': str(plugin / 'SA.Motion.dll')}))
