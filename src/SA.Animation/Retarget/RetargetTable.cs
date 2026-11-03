@@ -21,6 +21,17 @@ namespace SA.Animation
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public readonly struct RetargetGeometry
+    {
+        public readonly AssetId Target;
+        public readonly Float3 HipReference;
+        public readonly float HeightRatio;
+
+        public RetargetGeometry(AssetId target, Float3 hipReference, float heightRatio)
+        { Target = target; HipReference = hipReference; HeightRatio = heightRatio; }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public readonly struct RetargetBinding
     {
         public readonly AssetId Family;
@@ -104,14 +115,38 @@ namespace SA.Animation
 
         public static AnimationError Apply(AssetId clipFamily, in RetargetBinding binding, ReadOnlySpan<int> canonicalParents, ReadOnlySpan<Pose> canonicalLocal,
             ReadOnlySpan<RetargetRow> rows, Span<RigidPose> canonicalModel, Span<RigidPose> targetModel, Span<Pose> targetLocal) =>
-            Evaluate(clipFamily, binding, canonicalParents, canonicalLocal, rows, canonicalModel, targetModel, targetLocal, false);
+            Evaluate(clipFamily, binding, canonicalParents, canonicalLocal, rows, ReadOnlySpan<Float3>.Empty, canonicalModel, targetModel, targetLocal, false);
 
         public static AnimationError ApplyReference(AssetId clipFamily, in RetargetBinding binding, ReadOnlySpan<int> canonicalParents, ReadOnlySpan<Pose> canonicalLocal,
             ReadOnlySpan<RetargetRow> rows, Span<RigidPose> canonicalModel, Span<RigidPose> targetModel, Span<Pose> targetLocal) =>
-            Evaluate(clipFamily, binding, canonicalParents, canonicalLocal, rows, canonicalModel, targetModel, targetLocal, true);
+            Evaluate(clipFamily, binding, canonicalParents, canonicalLocal, rows, ReadOnlySpan<Float3>.Empty, canonicalModel, targetModel, targetLocal, true);
+
+        public static AnimationError ApplyGeometry(AssetId clipFamily, in RetargetBinding binding, in RetargetGeometry geometry,
+            ReadOnlySpan<int> canonicalParents, ReadOnlySpan<Pose> canonicalLocal, ReadOnlySpan<RetargetRow> rows, ReadOnlySpan<Float3> localOffsets,
+            Span<RigidPose> canonicalModel, Span<RigidPose> targetModel, Span<Pose> targetLocal) =>
+            WithGeometry(clipFamily, binding, geometry, canonicalParents, canonicalLocal, rows, localOffsets, canonicalModel, targetModel, targetLocal, false);
+
+        public static AnimationError ApplyReferenceGeometry(AssetId clipFamily, in RetargetBinding binding, in RetargetGeometry geometry,
+            ReadOnlySpan<int> canonicalParents, ReadOnlySpan<Pose> canonicalLocal, ReadOnlySpan<RetargetRow> rows, ReadOnlySpan<Float3> localOffsets,
+            Span<RigidPose> canonicalModel, Span<RigidPose> targetModel, Span<Pose> targetLocal) =>
+            WithGeometry(clipFamily, binding, geometry, canonicalParents, canonicalLocal, rows, localOffsets, canonicalModel, targetModel, targetLocal, true);
+
+        static AnimationError WithGeometry(AssetId clipFamily, in RetargetBinding binding, in RetargetGeometry geometry,
+            ReadOnlySpan<int> canonicalParents, ReadOnlySpan<Pose> canonicalLocal, ReadOnlySpan<RetargetRow> rows, ReadOnlySpan<Float3> localOffsets,
+            Span<RigidPose> canonicalModel, Span<RigidPose> targetModel, Span<Pose> targetLocal, bool reference)
+        {
+            if (geometry.Target != binding.Target || geometry.Target.IsEmpty || localOffsets.Length == 0 || localOffsets.Length != rows.Length
+                || !geometry.HipReference.IsFinite || !Scalar.IsFinite(geometry.HeightRatio) || geometry.HeightRatio <= 0f
+                || !Scalar.IsFinite(binding.HeightRatio) || binding.HeightRatio <= 0f)
+                return AnimationError.InvalidTable;
+            for (var i = 0; i < localOffsets.Length; i++) if (!localOffsets[i].IsFinite) return AnimationError.InvalidTable;
+            if (localOffsets[0].LengthSquared > 1e-12f) return AnimationError.InvalidTable;
+            var shaped = new RetargetBinding(binding.Family, binding.Target, binding.SourceHips, binding.TargetHips, geometry.HeightRatio, binding.SourceHipReference, geometry.HipReference);
+            return Evaluate(clipFamily, shaped, canonicalParents, canonicalLocal, rows, localOffsets, canonicalModel, targetModel, targetLocal, reference);
+        }
 
         static AnimationError Evaluate(AssetId clipFamily, in RetargetBinding binding, ReadOnlySpan<int> canonicalParents, ReadOnlySpan<Pose> canonicalLocal,
-            ReadOnlySpan<RetargetRow> rows, Span<RigidPose> canonicalModel, Span<RigidPose> targetModel, Span<Pose> targetLocal, bool reference)
+            ReadOnlySpan<RetargetRow> rows, ReadOnlySpan<Float3> localOffsets, Span<RigidPose> canonicalModel, Span<RigidPose> targetModel, Span<Pose> targetLocal, bool reference)
         {
             if (clipFamily != binding.Family || clipFamily.IsEmpty)
                 return AnimationError.FamilyMismatch;
@@ -143,6 +178,7 @@ namespace SA.Animation
                 ref readonly var row = ref rows[i];
                 var parent = row.Parent < 0 ? RigidPose.Identity : targetModel[row.Parent];
                 var local = row.Calibration;
+                if (localOffsets.Length != 0) local.Position = localOffsets[i];
                 if (row.Source >= 0)
                 {
                     local.Rotation = !reference && row.Mode == RetargetRowMode.FastLocal

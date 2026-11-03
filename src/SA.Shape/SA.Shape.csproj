@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>SA.Shape</PackageId>
+    <Version>0.1.0</Version>
+    <Description>Optional engine-independent runtime proportions and skin deformation for shared SA animation.</Description>
+    <Authors>SA</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../SA.Animation/SA.Animation.csproj" />
+    <None Include="../../docs/shape.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
+</Project>

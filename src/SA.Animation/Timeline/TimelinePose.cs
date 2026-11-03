@@ -33,11 +33,22 @@ namespace SA.Animation
             ref PoseFrameState state, Span<BoneFrameState> bones, Span<BoneFrameState> boneScratch,
             Span<ClipContribution> previousContributions, Span<LayerInput> previousLayers, Span<Pose> committedPose, Span<Pose> poseScratch, out FrameAction action)
         {
+            var error = Prepare(frame, contributions, layers, dataReady, destination, incomingVelocity, state, bones, boneScratch,
+                previousContributions, previousLayers, committedPose, poseScratch, out var prepared, out action);
+            if (error == AnimationError.NeedsData) state = prepared;
+            if (error != AnimationError.None || action == FrameAction.Reused) return error;
+            return Commit(prepared, contributions, layers, boneScratch, poseScratch, ref state, bones, previousContributions, previousLayers, committedPose);
+        }
+
+        public static AnimationError Prepare(in AnimationFrame frame, ReadOnlySpan<ClipContribution> contributions, ReadOnlySpan<LayerInput> layers,
+            bool dataReady, ReadOnlySpan<Pose> destination, ReadOnlySpan<PoseVelocity> incomingVelocity,
+            in PoseFrameState state, ReadOnlySpan<BoneFrameState> bones, Span<BoneFrameState> boneScratch,
+            ReadOnlySpan<ClipContribution> previousContributions, ReadOnlySpan<LayerInput> previousLayers, ReadOnlySpan<Pose> committedPose,
+            Span<Pose> poseScratch, out PoseFrameState prepared, out FrameAction action)
+        {
+            prepared = state;
             action = FrameAction.Waiting;
-            if (frame.Mode > FrameMode.Pause || double.IsNaN(frame.SimulationSeconds) || double.IsInfinity(frame.SimulationSeconds)
-                || !Scalar.IsFinite(frame.DeltaSeconds) || frame.DeltaSeconds < 0 || !Scalar.IsFinite(frame.TransitionSeconds) || frame.TransitionSeconds < 0
-                || !Scalar.IsFinite(frame.MaxHistoryGapSeconds) || frame.MaxHistoryGapSeconds <= 0)
-                return AnimationError.InvalidFrame;
+            if (!Valid(frame)) return AnimationError.InvalidFrame;
             if (contributions.Length > previousContributions.Length || layers.Length > previousLayers.Length)
                 return AnimationError.CapacityExceeded;
             var error = TimelineInput.Validate(contributions, layers);
@@ -73,7 +84,7 @@ namespace SA.Animation
             }
             if (!dataReady)
             {
-                state.Waiting = 1;
+                prepared.Waiting = 1;
                 return AnimationError.NeedsData;
             }
             var count = destination.Length;
@@ -130,14 +141,40 @@ namespace SA.Animation
                 boneScratch[i] = bone;
                 poseScratch[i] = output;
             }
-            var next = new PoseFrameState { LastFrame = frame, BoneCount = count, ContributionCount = contributions.Length, LayerCount = layers.Length,
+            prepared = new PoseFrameState { LastFrame = frame, BoneCount = count, ContributionCount = contributions.Length, LayerCount = layers.Length,
                 Duration = reset ? 0 : duration, Elapsed = elapsed, Initialized = 1, Waiting = 0 };
+            action = reset ? (seek ? FrameAction.Sought : FrameAction.Initialized) : begin ? FrameAction.Transitioned : FrameAction.Advanced;
+            return AnimationError.None;
+        }
+
+        public static AnimationError Commit(in PoseFrameState prepared, ReadOnlySpan<ClipContribution> contributions, ReadOnlySpan<LayerInput> layers,
+            ReadOnlySpan<BoneFrameState> boneScratch, ReadOnlySpan<Pose> poseScratch, ref PoseFrameState state, Span<BoneFrameState> bones,
+            Span<ClipContribution> previousContributions, Span<LayerInput> previousLayers, Span<Pose> committedPose)
+        {
+            var count = prepared.BoneCount;
+            if (prepared.Initialized == 0 || count <= 0 || count > SampleLocator.MaxBones || count > bones.Length || count > boneScratch.Length
+                || count > committedPose.Length || count > poseScratch.Length || contributions.Length != prepared.ContributionCount || layers.Length != prepared.LayerCount
+                || contributions.Length > previousContributions.Length || layers.Length > previousLayers.Length)
+                return AnimationError.CapacityExceeded;
+            if (boneScratch.Overlaps(bones) || poseScratch.Overlaps(committedPose) || contributions.Overlaps(previousContributions) || layers.Overlaps(previousLayers))
+                return AnimationError.AliasedBuffers;
+            if (prepared.Initialized != 1 || prepared.Waiting != 0 || !Valid(prepared.LastFrame) || !Scalar.IsFinite(prepared.Duration) || prepared.Duration < 0f
+                || !Scalar.IsFinite(prepared.Elapsed) || prepared.Elapsed < 0f || prepared.Elapsed > prepared.Duration)
+                return AnimationError.InvalidFrame;
+            var error = TimelineInput.Validate(contributions, layers);
+            if (error != AnimationError.None) return error;
+            for (var i = 0; i < count; i++)
+                if (!RigidMath.UnitPose(poseScratch[i]) || !RigidMath.UnitPose(boneScratch[i].History.Current) || !RigidMath.UnitPose(boneScratch[i].History.Previous)
+                    || !RigidMath.UnitPose(boneScratch[i].Destination) || boneScratch[i].History.Count < 1 || boneScratch[i].History.Count > 2
+                    || !Scalar.IsFinite(boneScratch[i].History.Interval) || boneScratch[i].History.Interval < 0f
+                    || !boneScratch[i].Decay.PositionOffset.IsFinite || !boneScratch[i].Decay.PositionVelocity.IsFinite
+                    || !boneScratch[i].Decay.RotationOffset.IsFinite || !boneScratch[i].Decay.RotationVelocity.IsFinite)
+                    return AnimationError.InvalidFrame;
             boneScratch.Slice(0, count).CopyTo(bones);
             poseScratch.Slice(0, count).CopyTo(committedPose);
             contributions.CopyTo(previousContributions);
             layers.CopyTo(previousLayers);
-            state = next;
-            action = reset ? (seek ? FrameAction.Sought : FrameAction.Initialized) : begin ? FrameAction.Transitioned : FrameAction.Advanced;
+            state = prepared;
             return AnimationError.None;
         }
 
@@ -155,5 +192,9 @@ namespace SA.Animation
         static bool Equal(in Pose a, in Pose b) => a.Position.X == b.Position.X && a.Position.Y == b.Position.Y && a.Position.Z == b.Position.Z
             && a.Rotation.X == b.Rotation.X && a.Rotation.Y == b.Rotation.Y && a.Rotation.Z == b.Rotation.Z && a.Rotation.W == b.Rotation.W
             && a.Scale.X == b.Scale.X && a.Scale.Y == b.Scale.Y && a.Scale.Z == b.Scale.Z;
+
+        static bool Valid(in AnimationFrame frame) => frame.Mode <= FrameMode.Pause && !double.IsNaN(frame.SimulationSeconds) && !double.IsInfinity(frame.SimulationSeconds)
+            && Scalar.IsFinite(frame.DeltaSeconds) && frame.DeltaSeconds >= 0f && Scalar.IsFinite(frame.TransitionSeconds) && frame.TransitionSeconds >= 0f
+            && Scalar.IsFinite(frame.MaxHistoryGapSeconds) && frame.MaxHistoryGapSeconds > 0f;
     }
 }
