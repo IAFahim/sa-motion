@@ -131,7 +131,7 @@ Use `ShapeTimelinePose.Evaluate` when downstream contacts/rendering have a valid
 1. Step parameters into next-parameter scratch. Copy their values into candidate shape values.
 2. Rebuild candidate geometry from immutable base rows. Keep the prior committed geometry alive.
 3. Pin and sample the shared clip segments; blend canonical poses; retarget using candidate geometry. Prepare frozen-geometry incoming derivatives when needed.
-4. Call ShapeTimelinePose.Prepare. It normalizes, calls TimelinePose.Prepare, composes corrected geometry, and returns a candidate ShapeFrameState. It does not change committed state, bones, pose or input snapshots.
+4. Call ShapeTimelinePose.Prepare. It normalizes, calls TimelinePose.Prepare, composes corrected geometry, and returns a candidate ShapeFrameState. It does not change committed state, bones, pose or input snapshots. If Action is Reused, skip the remaining commit/publication steps and use the already committed result; successful reuse does not prepare fresh scratch.
 5. On success, run optional IK from DisplayScratch into a distinct IK scratch array. Validate/build palettes into render scratch. Do not put IK corrections back into neutral animation history.
 6. Call ShapeTimelinePose.Commit using the successful candidate and original unmodified snapshots/scratch. Then publish the prepared contact/render results and swap/commit the parameters and geometry. All fallible work must precede publication. External jobs and GPU consumers need normal dependency/fence ownership.
 7. On any failure, discard the candidate. On NeedsData only, record the returned candidate.Motion.Waiting into committed Motion so retry creates a fresh boundary; keep pose, geometry, parameters and root fixed. Evaluate does this transient update itself.
@@ -223,6 +223,8 @@ UMA's authored DNA/converter model is useful precedent; this addon does not use 
 
 Do not change a live ragdoll's visual proportions alone and call physical integration complete. Choose a visible supported mode: customization while kinematic followed by one physics rebuild, or synchronized runtime physical updates. Collider resize/contact migration/mass distribution is a separate system, with old/new geometry snapshots; it is not achieved by multiplying bone transforms.
 
+For the later physical adapter, the nonuniform inertia calculation is fixed here. For an authored per-body affine deformation `x' = A*x + t`, with original mass m > 0, COM c and inertia I about that COM, recover the centred second moment per unit mass `C = (0.5*trace(I)*Identity - I)/m`. Then `c' = A*c+t`, `C' = A*C*transpose(A)`, and `I' = m'*(trace(C')*Identity-C')`. Choose fixed mass (`m'=m`) or fixed density (`m'=m*det(A)`) explicitly. Diagonalize I' for an engine's principal-inertia frame; scaling the old diagonal componentwise is wrong when axes mix. This is exact for the affinely transformed body distribution, not for a capsule merely refitted to that distribution. If primitive refitting changes the shape, calculate mass/inertia from the resulting primitives instead. Joint anchors must be rebuilt from the same shaped rigid joints, not from visual skin matrices. Publish the coherent collider/COM/inertia/anchor set at one fixed-step boundary. This formula is specified for SH4, not implemented or physically verified by CF2.
+
 Use the repository's official Unity CLI workflow when implementing those Unity packets. Read AGENTS first; do the person's visible Editor walk; leave no harness in their scene. CF2 changes no Unity project, scene, prefab, manifest, installed DLL or reference-package source.
 
 Portable verification:
@@ -231,6 +233,7 @@ Portable verification:
 eng/dotnet_test.sh tests/SA.Shape.Tests/SA.Shape.Tests.csproj
 eng/dotnet_test.sh tests/SA.Animation.Tests/SA.Animation.Tests.csproj
 eng/dotnet_test.sh tests/SA.Motion.Tests/SA.Motion.Tests.csproj
+python3 eng/check_shape_package.py
 python3 eng/check_source_rules.py
 git diff --check
 ```

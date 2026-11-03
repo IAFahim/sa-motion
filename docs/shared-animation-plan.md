@@ -1,10 +1,10 @@
-# Compact SA: shared animation families, ECS timeline input, and inertialization
+# Compact SA: shared animation, ECS timelines, inertialization and optional proportions
 
-Implementation specification and foundation handoff, 2026-11-03. The portable foundation is now implemented and tested on `packet/CF1-shared-animation-foundation`. [Section 22](#22-implemented-foundation-and-next-task) links the actual C# kernels, fixtures and next task. Unity integration and the 50-character pilot are still future work.
+Implementation specification and foundation handoff, 2026-11-03. The portable shared-animation foundation and optional runtime-proportions addon are implemented and tested. [Section 22](#22-implemented-foundation-and-next-task) records CF1; [section 23](#23-optional-runtime-proportions-implemented-addon-and-exact-handoff) gives the current CF2 source, algorithms and next tasks. The real mesh/physics shape adapter and 50/500 pilot remain integration work.
 
 The previous reactions/ragdoll plan is preserved verbatim in [the archive](archive/active-humanoid-reactions-2026-10-31.md). Its physical-animation work remains separate. This plan governs the compact animation library. Existing verification claims are in `/home/i/GitHub/sa-motion/AGENTS.md`, especially “Findings so far.”
 
-**Start here, implementation AI:** read section 22 and the linked CF1 contract/handoff before selecting a packet. Reuse the implemented portable algorithms; do not restart C00 or rewrite them from the pseudocode. Continue with real inventory and the C08 canonical Avatar/baker gate, then the three-rig/twelve-clip Unity slice and 50/500 pilot. Do not introduce AnimatorController/state-machine/parameter machinery or redesign the core.
+**Start here, implementation AI:** read sections 22 and 23 and their linked contracts/handoffs. CF2 contains the original numerical foundation plus later C08/family publication and the optional SA.Shape addon. Check current integration handoffs before selecting a packet; do not repeat a gate that has already passed or overwrite newer C-series work. Reuse the tested algorithms, implement the thin visible integrations, then run the real pilot. Keep the ECS timeline in charge; add no AnimatorController/state-machine/Unity animation parameter machinery.
 
 ## 1. Product contract
 
@@ -1143,13 +1143,13 @@ print(json.dumps({'seed':20261103,'retarget_trials':500,'retarget_max_rotation_e
 
 ## 22. Implemented foundation and next task
 
-The difficult portable algorithms now exist as C# with dual-target tests. Continue from branch `packet/CF1-shared-animation-foundation` in `/home/i/GitHub/sa-motion-wt/CF1`. The owner's original checkout and live Unity project remain unchanged. The tracked copy of this plan is `docs/shared-animation-plan.md` on that branch.
+The following is the original CF1 implementation receipt. Its portable C# kernels and fixtures are retained in CF2; section 23 supplies the current branch and optional shape addon. CF1 itself changed no live Unity assets. The tracked portable copy of this plan is `docs/shared-animation-plan.md`. Worktree names are not branch guarantees: check git before starting further work.
 
 Read [the actual API and lifetime contract](shared-family-contract.md) and [the complete CF1 handoff](handoff/CF1.md). They supersede earlier proposed names where the implementation has made them concrete.
 
 | Foundation | Implemented source | What remains |
 |---|---|---|
-| C00/C01 contract and canonical reference | [CanonicalHumanoid](../src/SA.Animation/Retarget/CanonicalHumanoid.cs), [expanded draft family](../families/humanoid-v1.safamily), actual unmanaged timeline inputs | Unity Avatar acceptance and final family publication |
+| C00/C01 contract and canonical reference | [CanonicalHumanoid](../src/SA.Animation/Retarget/CanonicalHumanoid.cs), [expanded family reference](../families/humanoid-v1.safamily), actual unmanaged timeline inputs | C08/family publication are recorded on the CF2 base; real-corpus validation remains |
 | C03 mapping/calibration math | [MappingAssignment and CalibrationFrame](../src/SA.Animation.Content/MappingAssignment.cs): Hungarian assignment, ambiguity, primary/roll alignment | Real inventory, trusted Avatar/hint acquisition and visible approval UI |
 | C04/C05 pose/table foundation | [CanonicalBlend](../src/SA.Animation/Pose/CanonicalBlend.cs), [RetargetTable](../src/SA.Animation/Retarget/RetargetTable.cs), explicit identity path, palette math | Real character bindings and CPU ECS/render adapter |
 | C06 interruption math | [PoseDecay](../src/SA.Motion/Inertialization/PoseDecay.cs), SO(3) log/exp/Jacobian, incoming/outgoing velocities | Adapter supplies boundary samples; legacy APIs retained |
@@ -1182,4 +1182,99 @@ Concrete implementation details to preserve:
 * Kernel outputs are scratch until successful commit. The timeline evaluator stages both bone state and displayed pose, so even a failure on a later bone cannot partially commit earlier bones.
 * Skeleton identity helpers hash the declared skeleton fields. Final family/profile identities must also include their versioned contact/import/mapping policies. Do not replace the complete bake key with a filename or label.
 
-**Next exact task for the smaller AI:** use the CF1 branch and contract, inspect the selected real source inventory, then perform C08's canonical Avatar/raw-baker conformance through the official Unity CLI and `eng/unity.sh`. Validate the draft in a preview scene, a translation-plus-turn endpoint fixture, and one real cross-Avatar source; export through SharedClipEncoder, reload, and compare. Then add the visible authoring controls and real ECS timeline/native-data wiring. Do not rewrite the numerical foundation, add state machines, or claim the draft/pilot is already verified in Unity.
+**Updated starting point:** section 23 supersedes CF1's original request to begin at C08. The CF2 base includes the subsequent C08 conformance/family publication. Read the current handoffs before advancing the real inventory, timeline/render adapter and corpus; do not reset published family identities or repeat completed integration packets. The historical CF1 test counts above are not CF2's current counts.
+
+## 23. Optional runtime proportions: implemented addon and exact handoff
+
+**Decision: separate optional addon, with small generic seams in the animation core.** SA.Shape 0.1.0 references SA.Animation 0.1.1, which references SA.Motion. SA.Animation does not reference SA.Shape. Characters that do not use customization keep the original APIs. A later Unity package should be `com.sa.unity.shape`, depending on the core adapter; no AnimatorController, Unity animation parameter system, runtime Avatar or UMA dependency belongs in this addon.
+
+The implementation is on `packet/CF2-runtime-shape-addon`, in `/home/i/GitHub/sa-motion-wt/CF2`, based on b7fdaec. That base includes CF1 and the subsequent C08/family publication; the earlier section 22 receipt remains historical. Other agents are working in other worktrees. Do not assume `/home/i/GitHub/sa-motion-wt/CF1` is still checked out to the original CF1 branch, or overwrite later C-series work.
+
+Read [the full implemented shape contract](shape.md) and [CF2's handoff](handoff/CF2.md). These contain exact API/storage rules, durable authoring schema, effect formulas, update order, failure semantics and small follow-up packets. The difficult numerical part is real C# with tests, not a request for the next AI to translate pseudocode.
+
+### 23.1 Source to reuse
+
+| Piece | Implemented source | Contract |
+|---|---|---|
+| Bounded channel smoothing | [ShapeParameters](../src/SA.Shape/ShapeParameters.cs) | Critically damped value/velocity, exact neutral restoration, no repeated multiplication into last frame |
+| Proportion evaluation | [ShapeRig](../src/SA.Shape/ShapeRig.cs) | Immutable base offsets plus positive log length/skin effects, reference supports/height ratio, no shared-data mutation |
+| Runtime data | [ShapeData](../src/SA.Shape/ShapeData.cs) | Unmanaged metadata, borrowed spans, rig/definition identity, per-character geometry revision |
+| Generic retarget seam | [RetargetTable](../src/SA.Animation/Retarget/RetargetTable.cs) | ApplyGeometry and ApplyReferenceGeometry; existing corrections reused; no SA.Shape dependency |
+| Neutral motion history | [ShapeMotionSpace](../src/SA.Shape/ShapeMotionSpace.cs) | Length-independent animation residuals; model-space hip residual; compose through corrected parents |
+| Atomic staged evaluation | [ShapeTimelinePose](../src/SA.Shape/ShapeTimelinePose.cs) | Prepare/Commit plus convenience Evaluate; no display/history commit after a failed composition |
+| Contacts/IK | [ShapeContacts](../src/SA.Shape/ShapeContacts.cs) | Updated limb lengths, changed sole offsets, explicit reach residual, rotations only |
+| Skin and normals | [ShapeSkinPalette](../src/SA.Shape/ShapeSkinPalette.cs) | Rigid model * separate skin deformation * original inverse bind; inverse-transpose normal support |
+| Corrective morph weights | [ShapeMorphs](../src/SA.Shape/ShapeMorphs.cs) | Bounded authored base plus channel effects; renderer uploads weights |
+| Executable examples | [ShapePipelineTests](../tests/SA.Shape.Tests/ShapePipelineTests.cs), [ShapeBoundaryTests](../tests/SA.Shape.Tests/ShapeBoundaryTests.cs) | One compressed motion shared by changing bodies, frozen-shape incoming velocities, atomic failure, unique translations and zero warm allocations |
+
+### 23.2 The algorithm, without the traps
+
+Keep the animation skeleton rigid. Each joint has a current parent-space offset and unit local scale. Put thickness/head/foot stretch in a separate per-bone affine D, with an authored bone-local basis and pivot. Do not inherit nonuniform skin scale through the joint hierarchy: that creates shear and damages both retargeting and IK.
+
+```text
+amount_j = clamp(parameter_j, min_j, max_j) - default_j
+length_i = exp(sum(logLength_ij * amount_j))
+offset_i = baseCalibrationPosition_i * length_i + sum(offsetDelta_ij * amount_j)
+skinScale_i = exp(sum(logSkinScale_ij * amount_j))
+L_i = R(basis_i) * diag(skinScale_i) * transpose(R(basis_i))
+D_i = affine(L_i, pivot_i - L_i*pivot_i)
+palette_i = MeshFromModel * rigidModel_i * D_i * originalInverseBind_i
+```
+
+The child offset and the parent's skin length are separate authored effects. A longer wrist offset does not tell arbitrary forearm vertices how to stretch. Pair the effects using the rig's actual axes and use corrective morphs where mesh weights/branches require them. Neutral parameter defaults restore the original offsets and identity D exactly. Clamped inputs and explicit allowed positive ranges prevent numeric overflow/reflection; authoring must validate combined extremes and actual geometry. Keep the original inverse binds; rebinding a changed rest pose cancels the intended shape.
+
+Ground the reference by measuring two approved deformed support markers, moving the hips so the lower support stays at its base height, then recomputing rigid reference FK. Set `rho = baseBindingRatio * newHipHeight/baseHipHeight` and retain the new hip model reference. Free mode skips the ground-restoring shift. Asymmetric legs still require runtime IK; reference grounding is not a two-foot terrain solve. A no-hips creature uses Free mode.
+
+### 23.3 Shape changes and inertialization
+
+Store animation history in shape-neutral residual space, rather than smoothing the physical offsets themselves:
+
+```text
+ordinary bone neutral P = (targetLocalP - currentOffset) / currentMotionScale
+hips neutral P = (targetHipModelP - currentHipModelReference) / currentHeightRatio
+neutral Q = targetLocalQ
+neutral S = 1
+```
+
+For ordinary bones, motionScale is the positive length ratio. Hips use the height ratio. PoseDecay/TimelinePose smooth these neutral transforms using the existing finite quintic/SO(3) algorithm. Compose current offsets/scales afterwards. Hips restore a model position first, then convert it through the corrected actual parent. A purely local hip formula fails when shaped ancestors rotate; the implementation and a dedicated test cover that case.
+
+A new shape revision does not change animation Continuity or restart a clip cut. Shape channels have their own value/velocity filter. This lets an interrupted transition follow the same animation path while the body grows. It cannot promise unchanged world vertices when a user abruptly changes a body parameter. Use the shape filter for a gradual visible change.
+
+Incoming cut velocities must come from animation samples at boundary simulation times -h/+h using one frozen candidate shape. Normalize both and differentiate over 2h. Do not include the shape-filter derivative. Include animation sample rate and blend-weight change; use one-sided differences at endpoints. Outgoing history is already neutral. Reverse sample time still uses positive simulation dt for both filters.
+
+Unique/exact-rig clips retain all translation curves: normalize against their base geometry, then compose against the current geometry. Do not route those clips through the ordinary humanoid table path, which fixes non-hip translations to current offsets. Physics recovery similarly normalizes an explicitly converted current displayed pose before seeding history; world-space physics positions are not neutral coordinates.
+
+### 23.4 Frame order and ownership
+
+```text
+requested values
+  -> next smoothed parameters, in scratch
+  -> candidate shape geometry, rebuilt from immutable base
+shared clip -> sample/blend -> retarget using candidate geometry
+  -> ShapeTimelinePose.Prepare (normalize -> stage neutral history -> compose)
+  -> optional contacts/IK -> scratch palettes/morph upload data
+  -> ShapeTimelinePose.Commit
+  -> publish render/contact data and commit parameters/geometry
+```
+
+Check both error and FrameAction. Reused means use the committed result and skip commit/publication; it does not prepare fresh scratch. NeedsData holds the old tick/pose/shape/parameters/root; only record the proposed Motion.Waiting flag, then retry. Any other error discards the candidate. Do every fallible stage before committing when whole-frame atomicity is required. Never modify the same character or staging inputs between Prepare and Commit. Single-writer/job dependencies are the adapter's responsibility.
+
+Definition/target replacement needs a new RigEpoch or explicit Seek/Teleport. Same-tick shape edits and changed shapes during Pause/zero dt reject; preview customization through Seek. Increment the per-character revision when geometry, deformation or corrective morph settings change. A supplemental pose-geometry stamp catches accidentally reused revisions, but does not hash skins/morphs and does not replace a content identity. Restore parameters, geometry, neutral history, snapshots and contacts together for rollback.
+
+Keep animation history pre-IK. Reach measures the new rigid distances, solves from original model rotations, updates the upper rotation, recomputes FK, then updates the middle rotation relative to its actual parent. Local translations never stretch. Anchor a sole using `ankle = supportAnchor - desiredFootRotation * (D_foot * soleLocalOffset)`. Anchors/poles are in the current model coordinates; the host converts from world/platform coordinates. Unreachable contacts return a residual for pelvis/release priority. Do not rescale a planted world anchor when the body grows.
+
+RootMotion.Delta scales each new interval's translation by the current height ratio once. Never rescale accumulated world root position when shape changes. Correct normals use inverse transpose; exact LBS normals invert the blended position matrix, rather than blending per-bone inverse transposes. ShapeSkinPalette.Blend is the executable reference. Normalize/orthogonalize final normals/tangents in the renderer; singular blends return an explicit diagnostic.
+
+### 23.5 Physics and durable authoring are bounded follow-ups
+
+The full shape contract specifies `.sashape` JSON fields and an exact SHA-256 canonical byte recipe. Those cold parser/writer/UI tasks remain for the next AI. The runtime structs are borrowed memory views, not a disk format. Definitions bind to exact target identities and resolve bone paths offline; identical rigs share them. Author-approved shape bounds, bases/pivots, markers and mesh corrective morphs are content work, not inferred from a channel name.
+
+A live physical body must update collider geometry, COM/inertia and joint anchors coherently at a fixed-step boundary, or visibly limit customization to a kinematic/rebuild mode. The future adapter's mass math is fixed: for a per-body affine A, old mass m, COM c and COM inertia I, set `C=(0.5*trace(I)*Identity-I)/m`, `C'=A*C*transpose(A)`, `c'=A*c+t`, `I'=m'*(trace(C')*Identity-C')`. Choose fixed mass or fixed density (`m'=m*det(A)`). Diagonalize the resulting symmetric inertia for principal axes; componentwise scaling of the old inertia diagonal is wrong. Primitive collider refitting needs inertia from the fitted primitives instead. This formula is specified, not implemented or physically verified here. Cloth/wardrobe/atlasing/mesh generation remain independent addons.
+
+### 23.6 Verification and next exact task
+
+CF2 receipts: **37 Shape tests, 178 Animation tests and 315 Motion tests pass on each library target** (`net10.0` and `netstandard2.1`), 530 cases per target. Shape tests explicitly assert the loaded framework of Shape, Animation, Motion and Content so a netstandard run cannot silently exercise a net10 dependency. The complete warm sample/blend/shape/retarget/inertialize/contact/skin path allocates **0 managed bytes across 1,000 calls after warm-up** in the .NET test host. This is not a Burst, GPU or crowd timing claim.
+
+The optional .nupkg has both target assemblies and an SA.Animation >=0.1.1 dependency. A package-only consumer is built for both targets and run under .NET 10; see the handoff for exact commands/results. No package was published to a registry. The live Unity project/reference packages remain untouched by CF2. Rendered mesh quality, Unity/Burst compatibility/performance, morph/normal upload, source importer, physics resizing and the real 50/500 shape sweep are not verified by these portable tests.
+
+**Next smaller-AI task:** read AGENTS and the current integration handoffs; use these tested kernels. Follow SH1-SH4 in the shape contract: importer/binding, optional Unity assembly/visible controls, real mesh renderer/contact integration, then physical and corpus gates. Prefer an existing newer C-series adapter over rebuilding one from section 22's old starting point. Drive Unity with its official CLI and `eng/unity.sh`, do the person's visible Editor walk, and leave no test harness in their scene. Do not rewrite the numerical foundation, import UMA as a mandatory core dependency, add state machines, or call the rendered/physics integration complete before measuring it.

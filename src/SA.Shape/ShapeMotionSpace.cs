@@ -79,9 +79,10 @@ namespace SA.Shape
         {
             var count = rows.Length;
             if (count == 0 || count > SampleLocator.MaxBones || offsets.Length != count || motionScales.Length != count
-                || geometry.Definition.IsEmpty || geometry.Retarget.Target.IsEmpty || geometry.Retarget.Target != binding.Target
+                || geometry.Definition.IsEmpty || geometry.Retarget.Target.IsEmpty || geometry.Retarget.Target != binding.Target || binding.Family.IsEmpty
                 || !geometry.Retarget.HipReference.IsFinite || !Scalar.IsFinite(geometry.Retarget.HeightRatio) || geometry.Retarget.HeightRatio <= 0f
-                || binding.TargetHips < -1 || binding.TargetHips >= count || binding.TargetHips == 0)
+                || binding.TargetHips < -1 || binding.TargetHips >= count || binding.TargetHips == 0 || binding.SourceHips < -1 || binding.SourceHips == 0
+                || (binding.SourceHips == -1) != (binding.TargetHips == -1))
                 return AnimationError.InvalidTable;
             for (var i = 0; i < count; i++)
                 if (rows[i].Parent >= i || rows[i].Parent < (i == 0 ? -1 : 0) || !offsets[i].IsFinite

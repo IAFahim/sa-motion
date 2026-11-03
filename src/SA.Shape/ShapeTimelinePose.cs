@@ -93,7 +93,7 @@ namespace SA.Shape
         {
             var count = prepared.Motion.BoneCount;
             if (prepared.Definition.IsEmpty || prepared.Target.IsEmpty) return AnimationError.InvalidTable;
-            if (count <= 0 || workspace.DisplayScratch.Length < count || workspace.Displayed.Length < count) return AnimationError.CapacityExceeded;
+            if (count <= 0 || count > SampleLocator.MaxBones || workspace.DisplayScratch.Length < count || workspace.Displayed.Length < count) return AnimationError.CapacityExceeded;
             if (Aliased(workspace, ReadOnlySpan<Pose>.Empty)) return AnimationError.AliasedBuffers;
             for (var i = 0; i < count; i++) if (!RigidMath.UnitPose(workspace.DisplayScratch[i])) return AnimationError.InvalidFrame;
             var motion = state.Motion;
