@@ -1,6 +1,8 @@
 # Rules for every agent working in this repository
 
-Read this file and your one work packet in `docs/work-packets.md`. Nothing else is required.
+Read this file and your one work packet in `docs/work-packets.md`.
+
+For Unity work, also load the official `unity-cli` skill (`unity skill show` if it is not available in your client) and the maintained SA companion at [`.claude/skills/sa-unity-cli/SKILL.md`](.claude/skills/sa-unity-cli/SKILL.md). Claude loads the project rules through `CLAUDE.md`; Codex discovers the same companion through `.agents/skills/sa-unity-cli`. Do not customize the managed Unity plugin cache: keep project lessons in this companion so plugin updates preserve them.
 
 ## What this repository is
 
@@ -66,6 +68,15 @@ Also: press Play on defaults must give a sensible result, so nothing teleports, 
 ## Controlling Unity from a shell
 
 You cannot click in Unity, and you do not need to. One Unity Editor per project runs a Pipeline server on `127.0.0.1:7801`. The `unity command` CLI sends it commands and returns JSON. Everything below was run on this machine (Unity 7000.0.0a12, project `/home/i/ruk2`).
+
+### Select the right code and project first
+
+- Run `git status --short --branch` and `git fetch origin` in every involved repository. Read the requested issue and its latest comments, then identify the published handoff branch. A fetch updates remote refs, not your checkout; a local package branch can still be old. Preserve local edits when integrating. `ruk2` itself need not be a Git repository, while `Packages/com.sa.unity` is one.
+- The scripts below run from a `sa-motion` checkout. Pass `SA_PROJECT=/absolute/path/to/project` on **every** wrapper command when the project is not `/home/i/ruk2`. For direct CLI calls, pass `--project-path /absolute/path/to/project` and the SA labels `--caller plugin --skill unity-cli`. `sa-demo` and `ruk2` are different targets even on the same machine.
+- Check `unity status --format json`, process arguments and the Editor log before starting anything. A single failed command during import/reload does not mean the Editor is closed. Source worktrees share the SA Editor and wrapper lock; do not launch an Editor per source packet. Use `eng/unity.sh` for all compile/test/eval operations.
+- On a different machine, `SA_UNITY_EDITOR` selects its installed executable for the starter. Check `ProjectSettings/ProjectVersion.txt`; do not upgrade the project or CLI as an incidental fix for a task.
+
+`script recompile_status` can finish with `completed` **or `up_to_date`**. Check its failure/error fields too; do not wait out the polling timeout on `up_to_date`. Zero tests, a compile failure or a timeout is not a passing test run. Keep stderr separate when parsing JSON; CLI hint text can otherwise trail it. The wrapper decodes the first JSON object for compatibility.
 
 ### Start and stop
 
@@ -165,6 +176,17 @@ Dated 2026-10-31. Numbers come from runs on this machine unless marked not measu
 | Physical-animation ragdoll demo | `eng/verify.sh --demo` passed all 21 steps and `eng/demo_check.py` 8 of 8: stands, light shove deflects the head, strength dips, no explosion, knockdown goes limp and reaches the floor, recovers, and recovery is inertialized |
 | Ragdoll recovery by inertialization (Gears of War style) | The write-back system feeds the displayed ragdoll pose into each bone's inertial history. On recovery the control system starts a `TransitionIntent` of `RagdollAuthoring.BlendSeconds` (0.7) and write-back pauses until it ends. Largest one-frame bone rotation jump at the recovery frame: 87.3 degrees with `BlendSeconds = 0` (the old reset), 1.7 degrees with 0.7. Slow-motion captures show the fallen character rising smoothly. Requires `RigAuthoring.Inertialize = true` on the ragdoll prefab |
 | Balance controller race | Scored on one evaluator in the pure .NET harness. Best honest score 93 (tuned capture point). One entry scored 100 by holding still, which violates the 450 N-s rule |
+
+### Shape renderer and portable demo (2026-11-04)
+
+- SH5 is integrated into `main` in sa-motion, com.sa.unity and sa-demo. Final pinned Git packages passed **95/95 SA.Tests** and **3/3 SA.Motion.Unity.Tests**, Unity 7000.0.0a12, Linux, Intel RPL-S, **Vulkan**. The earlier OpenGL run passed 94/94 before the extra startup test. See `docs/handoff/SH5.md` and sa-demo's `docs/evidence/` for the actual receipts.
+- CPU/blob affines stay 3 x 4 (48 bytes); GPU palette buffers, uploads and readbacks use `float4x4` (64 bytes), including an affine `(0,0,0,1)` row. Normals use the inverse transpose of the **blended** position matrix; tangents use its forward transform and orthogonalization. Do not weaken parity tests to hide a layout mismatch.
+- Shared/shape palette upload follows `SkinningSystem` and precedes `EntitiesGraphicsSystem`. Keep `NoSkin` on shaped rigs so compute does not overwrite their palette. Vulkan requires valid structured-buffer bindings even on the unskinned branch: retain the startup identity/influence sentinels and the Edit-mode preview bindings with reload/quit cleanup.
+- A shape profile pairs parent skin stretch with matching child offsets and derives its stretch basis from the real child direction. Keep the original inverse binds. Reference support grounding is not terrain planting or live physics resizing.
+- Git UPM packages resolve under `Library/PackageCache`; use `PackageInfo.FindForAssetPath(...).resolvedPath` for filesystem access and declare test packages in manifest `testables`. Publish immutable Git dependencies, not absolute home-directory symlinks. Verify the resolved package source/commit, not only the manifest text.
+- sa-demo's saved host is `Assets/Scenes/ShapeWalk.unity`; its character SubScene is `Assets/ShapeWalk/Character.unity`. Play from the host. `Tools/SA/Shape Workshop/Frame Game View` sets the actual 1280 x 720 render resolution. A CLI capture size alone can stretch the old texture. Reopen the saved scene and verify materials, textures and profiles survive scratch cleanup.
+- The measured Synty scene has 52 rigid bones and 50 palette entries. At fixed Idle time zero, shape changed 50,345 viewport pixels above 3/255; Restore neutral reproduced the poses/palettes exactly with zero changed viewport pixels. This verifies that rig and renderer, not every Humanoid/Generic rig or a player build.
+- Compactness removes runtime Animator state machines/parameters, not ordinary Humanoid/Generic coverage. SA already has authoring Avatar conversion, Generic sampling, hierarchy and multi-material handling. Consult the companion's `references/rig-coverage.md` and Rukhanka's read-only rig/clip/skin paths before replacing them. Keep ordinary playback, shared-family retargeting and runtime proportions as separately measured claims.
 
 ### What is NOT working or NOT verified
 

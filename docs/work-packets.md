@@ -6,6 +6,8 @@ CF1 (`packet/CF1-shared-animation-foundation`) implements the portable shared-fa
 
 CF2 (`packet/CF2-runtime-shape-addon`, base b7fdaec including the later C08 family publication) adds the optional portable SA.Shape package. Read `docs/packets/CF2.md`, the implemented contract in `docs/shape.md`, and `docs/handoff/CF2.md`. It owns no Unity adapter or scene. SH1-SH4 in the contract are the bounded follow-up tasks; use the current integration state before selecting one, since other C-series packets may already be complete. The core's only new seams are geometry overlays and staged timeline commit; SA.Animation never references SA.Shape.
 
+SH5 completes the SH1-SH4 shader/test/view recovery on `main` in sa-motion, com.sa.unity and sa-demo. Read `docs/packets/SH5.md`, `docs/handoff/SH5.md` and the `sa-unity-cli` companion skill before continuing Unity integration. The measured renderer result and the unverified pilot/physics gates are separate; preserve existing Humanoid/Generic authoring and ECS playback while extending the shared-family and shape paths.
+
 Each packet is sized for one small agent. Read `AGENTS.md` first. A packet owns the paths listed and must not edit any other path. Shared files (`SA.Motion.sln`, `docs/verification.md`, `docs/provenance.md`, `plan.md` in `com.sa.unity`) belong to the integrator.
 
 Why this order: a .NET test run takes seconds and needs no Editor, so any number of agents can run it at once. A Unity compile took 5 minutes 7 seconds here and one Editor serves everyone. Wave 1 is therefore pure .NET. Wave 2 uses Unity and runs one packet at a time.

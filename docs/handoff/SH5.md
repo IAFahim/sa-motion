@@ -51,3 +51,9 @@ Static ShapeTimelineSystem.LastWarning can retain a warning deliberately raised 
 ## Still separate
 
 This resolves the shader/test/view recovery in com.sa.unity#2. It does not complete all of sa-motion#3: the 50-character/500-motion pilot, production wardrobe/morph validation, terrain planting, boundary-velocity integration and live physical resizing remain separate gates. The demo explicitly plays clips in place and previews the skin/joint proportions. The original first-install Entities Graphics OnCreate/NRE storm was not reproduced in these reloads; no Unity engine package was patched. No NVIDIA, AMD, Windows, macOS or player-build result is claimed from this Intel Linux Editor run.
+
+## Agent instructions
+
+The follow-up knowledge lives in `AGENTS.md` and `.claude/skills/sa-unity-cli/SKILL.md`, with focused rig-coverage and shape-rendering references. `.agents/skills/sa-unity-cli` exposes the same skill to Codex, and `CLAUDE.md` imports the project rules. Load the official `unity-cli` skill too; `unity skill show` reads the CLI's own current documentation without changing a client installation. Keep SA additions outside the managed plugin cache.
+
+All three SH5 branches were advanced into remote `main` by fast-forward on the owner's explicit instruction. Read/fetch the actual main and issue comments before a later packet; do not restart from the old RED SH4 snapshot or an unrelated package checkout. Documentation updates do not establish new GPU or rig test results.
