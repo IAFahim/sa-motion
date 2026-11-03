@@ -4,6 +4,7 @@
   "references": [
     "SA.Reactions",
     "SA.Runtime",
+    "SA.Shape.Unity",
     "SA.IK",
     "SA.Motion.Unity",
     "Unity.Burst",

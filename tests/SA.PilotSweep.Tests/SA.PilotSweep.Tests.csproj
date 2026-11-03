@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5"><PrivateAssets>all</PrivateAssets></PackageReference>
+    <ProjectReference Include="../../src/SA.Animation/SA.Animation.csproj" />
+    <ProjectReference Include="../../src/SA.Animation.Content/SA.Animation.Content.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="../SA.Animation.Tests/Fixtures/three-bone-raw.saclip" Link="Fixtures/three-bone-raw.saclip" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../SA.Animation.Tests/Fixtures/three-bone-packed.saclip" Link="Fixtures/three-bone-packed.saclip" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../SA.Animation.Tests/Fixtures/three-bone-target.saret" Link="Fixtures/three-bone-target.saret" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../families/humanoid-v1.safamily" Link="Fixtures/humanoid-v1.safamily" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
