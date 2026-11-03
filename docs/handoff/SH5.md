@@ -8,6 +8,7 @@ Continues sa-motion 851b06b (`packet/SH1-shape-importer`), com.sa.unity 6e602ad 
 - Corrected canonical shoulder token scoring, preserving the existing failing assertion and the authored Synty aliases.
 - Changed the skin shader to inverse-transpose the blended position matrix for normals. Tangents use the forward linear transform and are orthogonalized to the resulting normal. Singular/nonfinite direction calculations have finite fallbacks. The CPU tangent helper now accepts the position matrix too.
 - Explicitly ordered shared and shape palette uploads before EntitiesGraphicsSystem. Retained the existing NoSkin guard for shaped rigs so compute does not overwrite their CPU palette.
+- Bound valid identity/influence buffers before the first runtime skin arrives and added an Editor-owned preview fallback with reload/quit disposal. Vulkan validates declared buffers even for the unskinned preview branch. This fixes the reproduced missing-buffer draw errors in Edit mode.
 - Added GPU tests that execute the actual Skinning.hlsl on a nonuniform blended matrix, a singular palette and an unskinned vertex. Existing GPU pose/palette parity tests still run.
 - Made the source-audit test resolve its package directory through PackageInfo, so it works with normal Git UPM packages as well as embedded packages.
 - Fixed eng/unity.sh polling: `up_to_date` is a successful compile status, not a reason to wait for the full polling timeout. CLI calls carry the requested unity-cli skill labels.
@@ -22,7 +23,7 @@ Use the Shape workshop Game view resolution (1280 x 720). The default CLI captur
 
 ## Verification receipts
 
-- Unity 7000.0.0a12, Intel RPL-S graphics. SA.Tests: 94 passed, zero failures/skips on OpenGL during the repair and on Vulkan. Final Vulkan shader compilation has no warnings. Three of the tests are the new direct shader checks.
+- Unity 7000.0.0a12, Intel RPL-S graphics. SA.Tests: 94 passed on OpenGL during the repair; the final Vulkan suite has 95 passed with zero failures/skips, including a startup sentinel regression. Final Vulkan shader compilation has no warnings. Three of the tests are the new direct shader checks.
 - Actual Vulkan character: 52 rigid bones, 50 palette entries, 64-byte buffer stride; no nonfinite or zero-determinant palette entries in the inspected live Idle/Walk/Run states.
 - Fixed Idle sample at time zero: both-legs/right-arm shape requests changed 50,345 viewport pixels above 3/255, excluding the controls panel. Largest palette component change was 0.1794486.
 - Restore neutral: all 50 palette matrices and all 52 local joint poses exactly match the saved neutral values; zero viewport pixels changed above 3/255. This is an actual rendered comparison, not just a difference between requested parameters.
@@ -49,4 +50,4 @@ Static ShapeTimelineSystem.LastWarning can retain a warning deliberately raised 
 
 ## Still separate
 
-This resolves the shader/test/view recovery in com.sa.unity#2. It does not complete all of sa-motion#3: the 50-character/500-motion pilot, production wardrobe/morph validation, terrain planting, boundary-velocity integration and live physical resizing remain separate gates. The demo explicitly plays clips in place and previews the skin/joint proportions. No NVIDIA, AMD, Windows, macOS or player-build result is claimed from this Intel Linux Editor run.
+This resolves the shader/test/view recovery in com.sa.unity#2. It does not complete all of sa-motion#3: the 50-character/500-motion pilot, production wardrobe/morph validation, terrain planting, boundary-velocity integration and live physical resizing remain separate gates. The demo explicitly plays clips in place and previews the skin/joint proportions. The original first-install Entities Graphics OnCreate/NRE storm was not reproduced in these reloads; no Unity engine package was patched. No NVIDIA, AMD, Windows, macOS or player-build result is claimed from this Intel Linux Editor run.
