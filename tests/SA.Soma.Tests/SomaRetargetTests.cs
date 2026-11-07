@@ -171,5 +171,33 @@ public sealed class SomaRetargetTests
         Assert.True((loaded.Root[frames - 1].Position - root[frames - 1].Position).Length < 1e-5f);
     }
 
+    [Fact]
+    public void ForearmRollBecomesTwistAboutTheCanonicalBoneAxis()
+    {
+        var retarget = Retarget();
+        var hips = SomaRig.BindPosition(SomaRig.Hips);
+        var baseline = Convert(retarget, Pack(BindModel()), 1).samples;
+        RollBecomesTwist(retarget, baseline, hips, true);
+        RollBecomesTwist(retarget, baseline, hips, false);
+    }
+
+    static void RollBecomesTwist(SomaRetarget retarget, Pose[] baseline, Float3 hips, bool left)
+    {
+        var fore = left ? SomaRig.LeftForeArm : SomaRig.RightForeArm;
+        var hand = left ? SomaRig.LeftHand : SomaRig.RightHand;
+        var lower = left ? 12 : 31;
+        var upper = left ? 11 : 30;
+        var ownAxis = left ? new Float3(-1f, 0f, 0f) : new Float3(1f, 0f, 0f);
+        var axis = SomaRig.BindPosition(hand) - SomaRig.BindPosition(fore);
+        var roll = Quaternion.AxisAngle(axis / axis.Length, -0.5f * Scalar.Pi);
+        var world = World(BindModel());
+        world[fore] = Quaternion.Normalize(Quaternion.Multiply(roll, world[fore]));
+        world[hand] = Quaternion.Normalize(Quaternion.Multiply(roll, world[hand]));
+        var samples = Convert(retarget, Pack(FromWorld(world, hips)), 1).samples;
+        var twist = Quaternion.Normalize(Quaternion.Multiply(Quaternion.InverseUnit(baseline[lower].Rotation), samples[lower].Rotation));
+        Assert.True(AngleDegrees(twist, Quaternion.AxisAngle(ownAxis, 0.5f * Scalar.Pi)) < 0.1f);
+        Assert.True(AngleDegrees(baseline[upper].Rotation, samples[upper].Rotation) < 0.01f);
+    }
+
     static float R(Random random) => (float)(random.NextDouble() * 2 - 1);
 }
