@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>SA.Soma</PackageId>
+    <Version>0.1.0</Version>
+    <Description>Engine-independent retarget of MotionBricks SOMA poses into the SA humanoid-v1 family.</Description>
+    <Authors>SA</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../SA.Animation/SA.Animation.csproj" />
+    <ProjectReference Include="../SA.Animation.Content/SA.Animation.Content.csproj" />
+  </ItemGroup>
+</Project>
