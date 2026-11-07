@@ -94,7 +94,7 @@ public sealed class SomaEvalDataTests
             output.WriteLine($"{Path.GetFileName(file)}: frames {frames}, bytes {bytes.Length}, encoder error {report.Error.AngleRadians * 180f / MathF.PI:F4} deg / {report.Error.PositionMetres * 1000f:F3} mm, " +
                 $"readback {worstAngle:F4} deg / {worstPosition * 1000f:F3} mm, worst bone direction {worstDirection:F4} deg, " +
                 $"planted foot-frames {planted}, highest planted support point {worstContactSole * 100f:F2} cm, highest planted family sole point {worstMidSole * 100f:F2} cm, lowest sole {lowestSole * 100f:F2} cm, " +
-                $"root travel {root[frames - 1].Position.X:F3},{root[frames - 1].Position.Z:F3} m, height ratio {retarget.HeightRatio:F4}");
+                $"root travel {root[frames - 1].Position.X:F3},{root[frames - 1].Position.Z:F3} m, height ratio {retarget.HeightRatio:F4}, target hip reference {retarget.Binding.TargetHipReference.Y:F4} m");
             Assert.True(worstAngle <= 0.15f && worstPosition <= 0.002f);
             Assert.True(worstDirection < 2f);
             Assert.True(planted > 0 && worstContactSole < 0.025f);
