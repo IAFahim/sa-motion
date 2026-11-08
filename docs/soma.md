@@ -114,3 +114,11 @@ No motion data, BVH or ONNX content is in the repository.
 - **Foot penetration**, up to 2.8 cm, is not corrected. That is leg IK's job at runtime.
 - **Static fingers.** Fingers stay at the canonical flat hand, because MotionBricks has no finger output.
 - **Space.** Runtime Z-up versus model Y-up is a caller choice (`SomaSpace`). Passing the wrong one lays the character on its back. It is not autodetected.
+
+## Baking a generated motion (`tools/SA.Soma.Bake`)
+
+```bash
+dotnet run --project tools/SA.Soma.Bake -- families/humanoid-v1.safamily in.saib out.saclip
+```
+
+Reads a sa-inbetween `.saib` (version 1, Y-up, metres, 77 joints), converts it with `SomaClip.Convert`, merges contacts (B7), encodes with `SomaClip.Encode`, then reads the bytes back with `SharedClipReader.Load` against the family id minted from the `.safamily` file. The output is an ordinary SA shared clip: the runtime plays it like any other, so nothing about generation reaches the ECS hot path. Check on a 50-frame generated clip: 18160 bytes, same as the `req2` row above.
