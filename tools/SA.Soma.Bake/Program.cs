@@ -11,36 +11,51 @@ if (args.Length != 3)
     return 2;
 }
 
-var family = LoadFamily(args[0], out var familyId, out var parents, out var reference);
-if (!family) return 1;
-
-var bytes = File.ReadAllBytes(args[1]);
-if (!ReadMotion(bytes, out var frames, out var poses, out var contacts, out var fps)) return 1;
-
-var error = SomaRetarget.Create(familyId, out var retarget);
-if (error != AnimationError.None) return Fail("retarget " + error);
-
-var samples = new Pose[frames * CanonicalHumanoid.BoneCount];
-var root = new RigidPose[frames];
-error = SomaClip.Convert(retarget!, poses, frames, SomaRig.SkeletonJointCount, SomaSpace.ModelYUp, samples, root);
-if (error != AnimationError.None) return Fail("convert " + error);
-
-var saContacts = new float[frames * SomaContacts.SaChannels];
-for (var f = 0; f < frames; f++)
+try
 {
-    error = SomaContacts.Merge(contacts.AsSpan(f * SomaContacts.SomaChannels, SomaContacts.SomaChannels), saContacts.AsSpan(f * SomaContacts.SaChannels, SomaContacts.SaChannels));
-    if (error != AnimationError.None) return Fail("contacts " + error);
+    var family = LoadFamily(args[0], out var familyId, out var parents, out var reference);
+    if (!family) return 1;
+
+    var bytes = File.ReadAllBytes(args[1]);
+    if (!ReadMotion(bytes, out var frames, out var poses, out var contacts, out var fps)) return 1;
+
+    var error = SomaRetarget.Create(familyId, out var retarget);
+    if (error != AnimationError.None) return Fail("retarget " + error);
+
+    var samples = new Pose[frames * CanonicalHumanoid.BoneCount];
+    var root = new RigidPose[frames];
+    error = SomaClip.Convert(retarget!, poses, frames, SomaRig.SkeletonJointCount, SomaSpace.ModelYUp, samples, root);
+    if (error != AnimationError.None) return Fail("convert " + error);
+
+    var saContacts = new float[frames * SomaContacts.SaChannels];
+    for (var f = 0; f < frames; f++)
+    {
+        error = SomaContacts.Merge(contacts.AsSpan(f * SomaContacts.SomaChannels, SomaContacts.SomaChannels), saContacts.AsSpan(f * SomaContacts.SaChannels, SomaContacts.SaChannels));
+        if (error != AnimationError.None) return Fail("contacts " + error);
+    }
+
+    error = SomaClip.Encode(retarget!, samples, root, saContacts, frames, fps, out var clip, out var report);
+    if (error != AnimationError.None) return Fail("encode " + error);
+
+    error = SharedClipReader.Load(clip, familyId, reference, out var loaded);
+    if (error != AnimationError.None || loaded == null) return Fail("readback " + error);
+
+    File.WriteAllBytes(args[2], clip);
+    Console.WriteLine($"wrote {args[2]}: {frames} frames, {clip.Length} bytes, {report.Segments} segments");
+    return 0;
 }
-
-error = SomaClip.Encode(retarget!, samples, root, saContacts, frames, fps, out var clip, out var report);
-if (error != AnimationError.None) return Fail("encode " + error);
-
-error = SharedClipReader.Load(clip, familyId, reference, out var loaded);
-if (error != AnimationError.None || loaded == null) return Fail("readback " + error);
-
-File.WriteAllBytes(args[2], clip);
-Console.WriteLine($"wrote {args[2]}: {frames} frames, {clip.Length} bytes, {report.Segments} segments");
-return 0;
+catch (IOException exception)
+{
+    return Fail(exception.Message);
+}
+catch (UnauthorizedAccessException exception)
+{
+    return Fail(exception.Message);
+}
+catch (JsonException exception)
+{
+    return Fail("family file: " + exception.Message);
+}
 
 static int Fail(string message)
 {
