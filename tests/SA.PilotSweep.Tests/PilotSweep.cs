@@ -186,8 +186,14 @@ namespace SA.PilotSweep.Tests
             Assert.Equal(ExpectedRigs, 3);
             Assert.Equal(ExpectedClips, 2);
             Assert.Equal(2, payloads.Count);
-            Assert.Equal(721, synty);
-            Assert.Equal(0, showcaseClips);
+            if (synty >= 0)
+            {
+                Assert.Equal(721, synty);
+            }
+            if (showcaseClips >= 0)
+            {
+                Assert.Equal(0, showcaseClips);
+            }
         }
 
         SweepResult Sweep()
@@ -577,7 +583,7 @@ namespace SA.PilotSweep.Tests
 
         int CountSynty()
         {
-            const string Synty = "/home/os/TestingAssets/Assets/Synty";
+            var Synty = Environment.GetEnvironmentVariable("SA_SYNTY_DIR") ?? string.Empty;
             if (!Directory.Exists(Synty))
             {
                 return -1;
@@ -587,7 +593,7 @@ namespace SA.PilotSweep.Tests
 
         int CountShowcaseClips()
         {
-            const string Showcase = "/home/os/GitHub/com.sa.unity/Samples~/Showcase";
+            var Showcase = Environment.GetEnvironmentVariable("SA_SHOWCASE_DIR") ?? string.Empty;
             if (!Directory.Exists(Showcase))
             {
                 return -1;
