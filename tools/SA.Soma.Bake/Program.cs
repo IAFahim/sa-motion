@@ -5,12 +5,26 @@ using SA.Animation.Content;
 using SA.Motion.Numerics;
 using SA.Soma;
 
-if (args.Length == 5 && args[0] == "pose") return ExtractPose(args[1], args[2], args[3], args[4]);
-if (args.Length == 6 && args[0] == "pose") return ExtractPose(args[1], args[2], args[3], args[4], args[5]);
+if (args.Length > 0 && args[0] == "pose")
+{
+    var rest = args.ToList();
+    var keepRoot = false;
+    var at = rest.IndexOf("--root");
+    if (at >= 0)
+    {
+        if (at + 1 >= rest.Count || rest[at + 1] != "last") return Fail("--root takes 'last'");
+        keepRoot = true;
+        rest.RemoveRange(at, 2);
+    }
+
+    if (rest.Count == 5) return ExtractPose(rest[1], rest[2], rest[3], rest[4], "", keepRoot);
+    if (rest.Count == 6) return ExtractPose(rest[1], rest[2], rest[3], rest[4], rest[5], keepRoot);
+}
+
 if (args.Length != 3)
 {
     Console.Error.WriteLine("usage: sa-soma-bake <humanoid-v1.safamily> <in.saib> <out.saclip>");
-    Console.Error.WriteLine("       sa-soma-bake pose <humanoid-v1.safamily> <in.saclip> <time[,time...]> <soma_rest.pose> <out.pose|out_{}.pose>");
+    Console.Error.WriteLine("       sa-soma-bake pose <humanoid-v1.safamily> <in.saclip> <time[,time...]> <soma_rest.pose> <out.pose|out_{}.pose> [--root last]");
     return 2;
 }
 
@@ -60,7 +74,7 @@ catch (JsonException exception)
     return Fail("family file: " + exception.Message);
 }
 
-static int ExtractPose(string familyPath, string clipPath, string time, string restPath, string outPath = "")
+static int ExtractPose(string familyPath, string clipPath, string time, string restPath, string outPath, bool keepRoot)
 {
     try
     {
@@ -101,7 +115,9 @@ static int ExtractPose(string familyPath, string clipPath, string time, string r
             error = clip.Sample(times[i], reference, sa);
             if (error != AnimationError.None) return Fail("sample " + error);
             var soma = new Pose[SomaRig.ModelJointCount];
-            error = SomaUnretarget.ToSoma(retarget!, sa, soma);
+            var saRoot = RigidPose.Identity;
+            if (keepRoot && clip.Root.Length == clip.SampleCount && !RelativeRoot(clip, times[i], times[times.Length - 1], step, out saRoot)) return Fail("root track unusable");
+            error = SomaUnretarget.ToSoma(retarget!, sa, saRoot, soma);
             if (error != AnimationError.None) return Fail("unretarget " + error);
             var skeleton = new Pose[SomaRig.SkeletonJointCount];
             error = SomaUnretarget.ToSkeleton(soma, skeletonReference, skeleton);
@@ -130,6 +146,15 @@ static int ExtractPose(string familyPath, string clipPath, string time, string r
     {
         return Fail("family file: " + exception.Message);
     }
+}
+
+static bool RelativeRoot(SharedClip clip, double seconds, double lastSeconds, double step, out RigidPose relative)
+{
+    relative = RigidPose.Identity;
+    if (step <= 0.0) return true;
+    var last = clip.Root[Math.Clamp((int)Math.Round(lastSeconds / step), 0, clip.SampleCount - 1)];
+    var current = clip.Root[Math.Clamp((int)Math.Round(seconds / step), 0, clip.SampleCount - 1)];
+    return RigidMath.TryInverse(last, out var inverse) && RigidMath.TryCompose(inverse, current, out relative);
 }
 
 static bool ParseTime(string token, double duration, double step, out double seconds)
