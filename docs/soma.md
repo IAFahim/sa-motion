@@ -89,6 +89,31 @@ How to read the table:
 - **Lowest sole.** Negative values are penetration on swing or heel-strike frames, down to 2.8 cm.
 - **Worst bone direction.** Data frames carry non-rest bone translations, up to 4.7 mm per L1. SA uses its own rest geometry, so up to 1.3 deg of direction difference is expected. The gate is 2 deg.
 
+## Reverse retarget (SA to SOMA)
+
+`SomaUnretarget.ToSoma(retarget, saLocal, saRoot, somaLocal)` turns one humanoid-v1 pose (56 locals) back into the 30 SOMA model joints as skeleton-local transforms, model Y-up, metres. It is closed form, allocation-free (stackalloc) and returns `AnimationError` without throwing.
+- Every mapped bone: `G_soma = M(W_sa * inv(C))` with `C = Rows[bone].Correction`, then `local = inv(G_soma[parent]) * G_soma[joint]`. `FastLocal` rows give the same `W_sa = G * C`, so one formula covers both modes.
+- Hips: SA model position (root, bone 0 and bone 1 composed) maps back as `sourceRef + (p - targetRef) / ratio`, then mirrored. `saRoot` is the root track entry from `SomaClip.Convert` (identity for a single pose), so the result is relative to the first frame's heading frame, like the forward root track.
+- Neck1 gets its bind local; Neck2 takes the rest, so the Neck2 world rotation (all SA Neck carries) is exact.
+- Hand-end markers get their rest translation and identity rotation, as in the MotionBricks data. Non-root translations are the rest translations.
+- `ToSkeleton(somaLocal, skeletonReference, skeletonLocal)` writes the 77-joint layout: model joints at `SomaRig.SkeletonIndex`, every other joint and every non-root translation from the caller's 77-joint reference (the network's `reference_local`). `Write` packs poses as px py pz qx qy qz qw floats. The 77-joint bind is not in this repository, so the caller supplies it.
+
+Measured round trip SOMA to SA to SOMA (`SomaUnretargetTests`, net10.0 and netstandard2.1, 2026-11-09, angles in double precision):
+
+| Input | Local rotation, all mapped joints except Neck1/Neck2 | World rotation, all but Neck1 | Hips position | Model position, outside the neck chain |
+|---|---|---|---|---|
+| 24 random poses, Neck1 at bind | 0.00002 deg | 0.00007 deg | 0.002 mm | 0.002 mm |
+| req1, req2, req3_chain eval clips | 0.00002 deg | 0.00005 deg | 0.0001 mm | 0.0005 mm |
+
+The SA calibration A-pose maps to the SOMA bind pose within 0.00003 deg with hips at 0.99804 m, and the SA reference pose survives reverse then forward within 0.00001 deg.
+
+What is lost, because the forward map drops it:
+- **Neck1 versus Neck2 split.** Only Neck1 x Neck2 reaches SA. On the eval clips the Neck1 local differs from bind by up to 15.8 deg (Neck2 local the same amount the other way), which moves the Neck2, Head, Jaw and eye positions by up to 21.5 mm (req1 12.2, req2 17.1, req3_chain 21.5 mm). Their world rotations are exact.
+- **Bone translations.** The forward uses SA rest geometry, so the data's non-rest translations (up to 5.0 mm on the eval clips) come back as rest translations.
+- **Hips planar position and heading** live in the SA root track, not the pose. Without `saRoot` the pose comes back in its own heading frame, hips at x = z = 0.
+- **Markers and fingers** carry no motion (markers are not mapped; SA fingers are `Static`).
+- No twist is lost: each mapped bone carries a full rotation both ways.
+
 ## Regenerating the eval data (never commit it)
 
 `testdata/eval-only/` is gitignored. The clips are derived from MotionBricks runtime output, which is covered by the NVIDIA evaluation licence.
