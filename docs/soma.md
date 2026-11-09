@@ -147,3 +147,7 @@ dotnet run --project tools/SA.Soma.Bake -- families/humanoid-v1.safamily in.saib
 ```
 
 Reads a sa-inbetween `.saib` (version 1, Y-up, metres, 77 joints), converts it with `SomaClip.Convert`, merges contacts (B7), encodes with `SomaClip.Encode`, then reads the bytes back with `SharedClipReader.Load` against the family id minted from the `.safamily` file. The output is an ordinary SA shared clip: the runtime plays it like any other, so nothing about generation reaches the ECS hot path. Check on a 50-frame generated clip: 18160 bytes, same as the `req2` row above.
+
+## Extracting a pose from a clip
+
+`sa-soma-bake pose <family> <in.saclip> <seconds|end> <soma_rest.pose> <out.pose>` samples one frame of a baked clip, runs the reverse retarget and writes a 77-joint `.pose` that `sa-inbetween` accepts as a context or goal. The rest pose supplies the joint offsets and finger rotations the humanoid rig does not carry; any pose written by `make_pose_library.py` works. Checked end to end: a generated move baked to `.saclip`, its first and last frame extracted, and a second generation run from them reproduced both frames at 0.0 degrees on every body joint (Neck1/Neck2 excepted, see above).

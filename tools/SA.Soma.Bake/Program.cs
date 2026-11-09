@@ -5,9 +5,12 @@ using SA.Animation.Content;
 using SA.Motion.Numerics;
 using SA.Soma;
 
+if (args.Length == 5 && args[0] == "pose") return ExtractPose(args[1], args[2], args[3], args[4]);
+if (args.Length == 6 && args[0] == "pose") return ExtractPose(args[1], args[2], args[3], args[4], args[5]);
 if (args.Length != 3)
 {
     Console.Error.WriteLine("usage: sa-soma-bake <humanoid-v1.safamily> <in.saib> <out.saclip>");
+    Console.Error.WriteLine("       sa-soma-bake pose <humanoid-v1.safamily> <in.saclip> <seconds|end> <soma_rest.pose> <out.pose>");
     return 2;
 }
 
@@ -55,6 +58,71 @@ catch (UnauthorizedAccessException exception)
 catch (JsonException exception)
 {
     return Fail("family file: " + exception.Message);
+}
+
+static int ExtractPose(string familyPath, string clipPath, string time, string restPath, string outPath = "")
+{
+    try
+    {
+        if (outPath.Length == 0) return Fail("pose needs <out.pose>");
+        if (!LoadFamily(familyPath, out var familyId, out _, out var reference)) return 1;
+        var clipBytes = File.ReadAllBytes(clipPath);
+        var error = SharedClipReader.Load(clipBytes, familyId, reference, out var clip);
+        if (error != AnimationError.None || clip == null) return Fail("clip " + error);
+        double seconds;
+        if (time == "end") seconds = clip.Duration;
+        else if (!double.TryParse(time, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out seconds)) return Fail("time must be seconds or 'end'");
+        seconds = Math.Clamp(seconds, 0.0, clip.Duration);
+
+        var restBytes = File.ReadAllBytes(restPath);
+        const int floats = SomaRig.SkeletonJointCount * SomaFrame.FloatsPerJoint;
+        if (restBytes.Length != floats * sizeof(float)) return Fail("rest pose must be 539 float32 values");
+        var rest = new float[floats];
+        Buffer.BlockCopy(restBytes, 0, rest, 0, restBytes.Length);
+        var skeletonReference = new Pose[SomaRig.SkeletonJointCount];
+        for (var j = 0; j < skeletonReference.Length; j++)
+        {
+            var at = j * SomaFrame.FloatsPerJoint;
+            skeletonReference[j] = new Pose
+            {
+                Position = new Float3(rest[at], rest[at + 1], rest[at + 2]),
+                Rotation = Quaternion.Normalize(new Quaternion(rest[at + 3], rest[at + 4], rest[at + 5], rest[at + 6])),
+                Scale = Float3.One
+            };
+        }
+
+        error = SomaRetarget.Create(familyId, out var retarget);
+        if (error != AnimationError.None) return Fail("retarget " + error);
+        var sa = new Pose[CanonicalHumanoid.BoneCount];
+        error = clip.Sample(seconds, reference, sa);
+        if (error != AnimationError.None) return Fail("sample " + error);
+        var soma = new Pose[SomaRig.ModelJointCount];
+        error = SomaUnretarget.ToSoma(retarget!, sa, soma);
+        if (error != AnimationError.None) return Fail("unretarget " + error);
+        var skeleton = new Pose[SomaRig.SkeletonJointCount];
+        error = SomaUnretarget.ToSkeleton(soma, skeletonReference, skeleton);
+        if (error != AnimationError.None) return Fail("skeleton " + error);
+        var output = new float[floats];
+        error = SomaUnretarget.Write(skeleton, output);
+        if (error != AnimationError.None) return Fail("write " + error);
+        var bytes = new byte[output.Length * sizeof(float)];
+        Buffer.BlockCopy(output, 0, bytes, 0, bytes.Length);
+        File.WriteAllBytes(outPath, bytes);
+        Console.WriteLine($"wrote {outPath}: t={seconds:F3}s of {clip.Duration:F3}s");
+        return 0;
+    }
+    catch (IOException exception)
+    {
+        return Fail(exception.Message);
+    }
+    catch (UnauthorizedAccessException exception)
+    {
+        return Fail(exception.Message);
+    }
+    catch (JsonException exception)
+    {
+        return Fail("family file: " + exception.Message);
+    }
 }
 
 static int Fail(string message)
