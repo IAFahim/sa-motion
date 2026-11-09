@@ -61,6 +61,21 @@ return report;
 
 Use live Editor APIs for scenes, prefabs, materials and assets when the Editor is reachable. Do not overwrite a dirty scene or hand-edit its YAML. Reopen changed assets from disk after an import before judging the result. For disposable objects, use a preview scene or `HideFlags.HideAndDontSave`; creating then deleting a normal scene object can still leave a dirty flag and block later tests with a save dialog. Do not dismiss a save dialog by discarding the owner's changes.
 
+## Never get stuck on the "Save changes to scene" dialog
+
+A windowed Editor shows a modal dialog ("Do you want to save the changes you made in the scenes") whenever something closes or replaces a scene that is dirty. The dialog blocks the Editor's main thread, so every `unity command`, `eng/unity.sh eval` and test call hangs until a person clicks. This froze sessions for hours.
+
+What triggers it: `EditorSceneManager.OpenScene(..., Single)`, `NewScene`, `scene open`/`scene create` on a different scene, and any menu that swaps scenes, while any open scene has `isDirty`. Creating or deleting an object in the owner's scene, or `Undo.RegisterCreatedObjectUndo` on a scene object, makes it dirty.
+
+Prevent it, in this order:
+1. **Do not dirty the owner's scene.** Put disposable objects in `EditorSceneManager.NewPreviewScene()` or give them `HideFlags.HideAndDontSave`; create Play-mode helpers from an `EnteredPlayMode` callback so they never exist in Edit mode. A probe that must live in a scene goes in a scratch scene of your own.
+2. **Look before you swap.** Run the state check above. If any scene is dirty and you did not make the changes, do not open, create or reload a scene: use the scene that is already open, or stop and tell the owner. Never discard their changes to get past it.
+3. **Do not reopen the scene that is already open and loaded.** It is a no-op that can still prompt.
+4. **Automate in your own batchmode Editor, not the owner's window.** A batchmode Editor (`eng/unity_start.sh` without `SA_UNITY_WINDOW=1`) never shows modal dialogs: the call fails with an error instead of hanging. Use the owner's windowed Editor only for what the owner asked to see, and only with calls that do not swap scenes.
+5. **Never wait without a limit.** Wrap every call in `timeout 60 ...` (`timeout 300` for compile and test). If a call times out, do not retry in a loop: run `unity command --result-only scene list_open` once, and if that also hangs, a dialog is open. Say so in one line ("the Editor is waiting on a Save dialog") and stop touching it.
+
+If the dialog is already up and you did not cause the owner's changes, only the owner can choose Save, Don't Save or Cancel. Cancel keeps their work and releases the Editor.
+
 For a full Inspector PNG plus text, use `com.sa.unity.inspect` through eval:
 
 ```csharp
