@@ -10,7 +10,7 @@ if (args.Length == 6 && args[0] == "pose") return ExtractPose(args[1], args[2], 
 if (args.Length != 3)
 {
     Console.Error.WriteLine("usage: sa-soma-bake <humanoid-v1.safamily> <in.saib> <out.saclip>");
-    Console.Error.WriteLine("       sa-soma-bake pose <humanoid-v1.safamily> <in.saclip> <seconds|end> <soma_rest.pose> <out.pose>");
+    Console.Error.WriteLine("       sa-soma-bake pose <humanoid-v1.safamily> <in.saclip> <time[,time...]> <soma_rest.pose> <out.pose|out_{}.pose>");
     return 2;
 }
 
@@ -69,10 +69,12 @@ static int ExtractPose(string familyPath, string clipPath, string time, string r
         var clipBytes = File.ReadAllBytes(clipPath);
         var error = SharedClipReader.Load(clipBytes, familyId, reference, out var clip);
         if (error != AnimationError.None || clip == null) return Fail("clip " + error);
-        double seconds;
-        if (time == "end") seconds = clip.Duration;
-        else if (!double.TryParse(time, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out seconds)) return Fail("time must be seconds or 'end'");
-        seconds = Math.Clamp(seconds, 0.0, clip.Duration);
+        var tokens = time.Split(',');
+        if (tokens.Length > 1 && !outPath.Contains("{}")) return Fail("several times need '{}' in <out.pose>");
+        var times = new double[tokens.Length];
+        var step = clip.SampleCount > 1 ? clip.Duration / (clip.SampleCount - 1) : 0.0;
+        for (var i = 0; i < tokens.Length; i++)
+            if (!ParseTime(tokens[i].Trim(), clip.Duration, step, out times[i])) return Fail("time must be seconds, s+Nf or e-Nf");
 
         var restBytes = File.ReadAllBytes(restPath);
         const int floats = SomaRig.SkeletonJointCount * SomaFrame.FloatsPerJoint;
@@ -93,22 +95,27 @@ static int ExtractPose(string familyPath, string clipPath, string time, string r
 
         error = SomaRetarget.Create(familyId, out var retarget);
         if (error != AnimationError.None) return Fail("retarget " + error);
-        var sa = new Pose[CanonicalHumanoid.BoneCount];
-        error = clip.Sample(seconds, reference, sa);
-        if (error != AnimationError.None) return Fail("sample " + error);
-        var soma = new Pose[SomaRig.ModelJointCount];
-        error = SomaUnretarget.ToSoma(retarget!, sa, soma);
-        if (error != AnimationError.None) return Fail("unretarget " + error);
-        var skeleton = new Pose[SomaRig.SkeletonJointCount];
-        error = SomaUnretarget.ToSkeleton(soma, skeletonReference, skeleton);
-        if (error != AnimationError.None) return Fail("skeleton " + error);
-        var output = new float[floats];
-        error = SomaUnretarget.Write(skeleton, output);
-        if (error != AnimationError.None) return Fail("write " + error);
-        var bytes = new byte[output.Length * sizeof(float)];
-        Buffer.BlockCopy(output, 0, bytes, 0, bytes.Length);
-        File.WriteAllBytes(outPath, bytes);
-        Console.WriteLine($"wrote {outPath}: t={seconds:F3}s of {clip.Duration:F3}s");
+        for (var i = 0; i < times.Length; i++)
+        {
+            var sa = new Pose[CanonicalHumanoid.BoneCount];
+            error = clip.Sample(times[i], reference, sa);
+            if (error != AnimationError.None) return Fail("sample " + error);
+            var soma = new Pose[SomaRig.ModelJointCount];
+            error = SomaUnretarget.ToSoma(retarget!, sa, soma);
+            if (error != AnimationError.None) return Fail("unretarget " + error);
+            var skeleton = new Pose[SomaRig.SkeletonJointCount];
+            error = SomaUnretarget.ToSkeleton(soma, skeletonReference, skeleton);
+            if (error != AnimationError.None) return Fail("skeleton " + error);
+            var output = new float[floats];
+            error = SomaUnretarget.Write(skeleton, output);
+            if (error != AnimationError.None) return Fail("write " + error);
+            var bytes = new byte[output.Length * sizeof(float)];
+            Buffer.BlockCopy(output, 0, bytes, 0, bytes.Length);
+            var target = tokens.Length > 1 ? outPath.Replace("{}", i.ToString(System.Globalization.CultureInfo.InvariantCulture)) : outPath;
+            File.WriteAllBytes(target, bytes);
+            Console.WriteLine($"wrote {target}: t={times[i]:F3}s of {clip.Duration:F3}s");
+        }
+
         return 0;
     }
     catch (IOException exception)
@@ -123,6 +130,22 @@ static int ExtractPose(string familyPath, string clipPath, string time, string r
     {
         return Fail("family file: " + exception.Message);
     }
+}
+
+static bool ParseTime(string token, double duration, double step, out double seconds)
+{
+    seconds = 0.0;
+    var culture = System.Globalization.CultureInfo.InvariantCulture;
+    if (token == "end" || token == "e") seconds = duration;
+    else if (token == "start" || token == "s") seconds = 0.0;
+    else if ((token.StartsWith("s+") || token.StartsWith("e-")) && token.EndsWith("f"))
+    {
+        if (!int.TryParse(token.AsSpan(2, token.Length - 3), System.Globalization.NumberStyles.None, culture, out var frames)) return false;
+        seconds = token[0] == 's' ? frames * step : duration - frames * step;
+    }
+    else if (!double.TryParse(token, System.Globalization.NumberStyles.Float, culture, out seconds)) return false;
+    seconds = Math.Clamp(seconds, 0.0, duration);
+    return true;
 }
 
 static int Fail(string message)
