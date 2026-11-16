@@ -37,7 +37,7 @@ namespace SA.Animation
             rotation = Quaternion.Identity;
             if (bytes.Length < 8)
                 return false;
-            var largest = BinaryPrimitives.ReadUInt16LittleEndian(bytes);
+            var largest = Wire.Unsigned16(bytes);
             if (largest > 3)
                 return false;
             var q = default(Quaternion);
@@ -46,7 +46,7 @@ namespace SA.Animation
             for (var i = 0; i < 4; i++)
                 if (i != largest)
                 {
-                    var encoded = BinaryPrimitives.ReadInt16LittleEndian(bytes.Slice(offset));
+                    var encoded = (short)Wire.Unsigned16(bytes.Slice(offset));
                     if (encoded == short.MinValue)
                         return false;
                     var value = encoded * Range / 32767.0;
@@ -89,9 +89,9 @@ namespace SA.Animation
             value = Float3.Zero;
             if (bytes.Length < 6 || !ValidRange(min, max))
                 return false;
-            value = new Float3(Expand(BinaryPrimitives.ReadUInt16LittleEndian(bytes), min.X, max.X),
-                Expand(BinaryPrimitives.ReadUInt16LittleEndian(bytes.Slice(2)), min.Y, max.Y),
-                Expand(BinaryPrimitives.ReadUInt16LittleEndian(bytes.Slice(4)), min.Z, max.Z));
+            value = new Float3(Expand(Wire.Unsigned16(bytes), min.X, max.X),
+                Expand(Wire.Unsigned16(bytes.Slice(2)), min.Y, max.Y),
+                Expand(Wire.Unsigned16(bytes.Slice(4)), min.Z, max.Z));
             return true;
         }
 
@@ -257,7 +257,12 @@ namespace SA.Animation
     internal static class Wire
     {
         internal static bool Fits(int total, int offset, int length) => offset >= 0 && length >= 0 && offset <= total && length <= total - offset;
-        internal static float Single(ReadOnlySpan<byte> bytes) => BitConverter.Int32BitsToSingle(BinaryPrimitives.ReadInt32LittleEndian(bytes));
+        internal static ushort Unsigned16(ReadOnlySpan<byte> bytes) => (ushort)(bytes[0] | bytes[1] << 8);
+        internal static unsafe float Single(ReadOnlySpan<byte> bytes)
+        {
+            var bits = bytes[0] | bytes[1] << 8 | bytes[2] << 16 | bytes[3] << 24;
+            return *(float*)&bits;
+        }
         internal static double Double(ReadOnlySpan<byte> bytes) => BitConverter.Int64BitsToDouble(BinaryPrimitives.ReadInt64LittleEndian(bytes));
         internal static Float3 Vector(ReadOnlySpan<byte> bytes) => new Float3(Single(bytes), Single(bytes.Slice(4)), Single(bytes.Slice(8)));
         internal static Quaternion Rotation(ReadOnlySpan<byte> bytes) => new Quaternion(Single(bytes), Single(bytes.Slice(4)), Single(bytes.Slice(8)), Single(bytes.Slice(12)));
